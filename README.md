@@ -89,6 +89,7 @@ Assets and configurations for storybook or similar tools.
 ## How to Run the Application
 1. Install dependencies: `npm install`
 2. Start the development server: `npm run dev`
+3. Start the development server with mock API: `npm run dev:ui-mock`
 
 ## Deployment
 - Build the project: `npm run build`
