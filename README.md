@@ -88,7 +88,7 @@ Assets and configurations for storybook or similar tools.
 
 ## How to Run the Application
 1. Install dependencies: `npm install`
-2. Install MockAPI dependencies (Use the below command based on where you're installing)
+2. Install MockAPI dependencies (choose the command for your environment)
 
     2.1. VSCode Terminal: `cd MockAPI; npm install; cd ..` 
     
