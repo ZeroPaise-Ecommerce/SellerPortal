@@ -4,16 +4,23 @@ import ProductInfo from './ProductInfo';
 import Stepper from '@/components/ui/stepper';
 import ProductVariant from './ProductVariant';
 import { Plus } from 'lucide-react';
+import PriceAndTax from './PriceAndTax';
+import AddWarehouseInfo from './AddWarehouseInfo';
+import ChannelListing from './ChannelListing';
+import Media from './Media';
+import SEOTags from './SEOTags';
+import AdditionSettings from './AdditionSettings';
 
 const Addproducts = () => {
     const addSegments = [
         { label: 'Basic Information', content: <ProductInfo /> },
         { label: 'Variance', content: <ProductVariant /> },
-        { label: 'Pricing and Taxing', content: <ProductInfo /> },
-        { label: 'Warehousing', content: <ProductInfo /> },
-        { label: 'Listing', content: <ProductInfo /> },
-        { label: 'Media', content: <ProductInfo /> },
-        { label: 'SEO', content: <ProductInfo /> }
+        { label: 'Pricing and Taxing', content: <PriceAndTax /> },
+        { label: 'Warehousing', content: <AddWarehouseInfo /> },
+        { label: 'Listing', content: <ChannelListing /> },
+        { label: 'Media', content: <Media /> },
+        { label: 'SEO', content: <SEOTags /> },
+        { label: 'Additional Settings', content: <AdditionSettings /> },
     ]
 
     return (
