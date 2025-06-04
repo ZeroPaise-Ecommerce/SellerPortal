@@ -2,23 +2,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import React, { useEffect, useImperativeHandle, useState, forwardRef } from "react";
+import React, { useEffect, useState } from "react";
+import useAppDispatch from '@/hooks/useAppDispatch';
+import useAppSelector from '@/hooks/useAppSelector';
+import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
+
+type PriceState = {
+    MRP: string;
+    SellingPrice: string;
+    Cost: string;
+    TaxClass: string;
+    HSNCode: string;
+    GSTType: string;
+};
 
 const PriceAndTax = () => {
-    const [price, setPrice] = useState(() => ({
+    const dispatch = useAppDispatch();
+    const stepIndex = 2;
+    const initial = useAppSelector(state => selectStepData(state, stepIndex));
+    const [price, setPrice] = useState<PriceState>({
         MRP: '',
         SellingPrice: '',
         Cost: '',
         TaxClass: '5',
         HSNCode: '',
         GSTType: '',
-    }));
+        ...initial
+    });
+
+    useEffect(() => { setPrice(prev => ({ ...prev, ...initial })); }, [initial]);
 
     // Only call onDataChange if the value actually changed
     const handleChange = (field, value) => {
-        if (price[field] === value) return;
         const updated = { ...price, [field]: value };
         setPrice(updated);
+        dispatch(saveStepDataLocal({ stepIndex, data: updated }));
     };
 
     return (

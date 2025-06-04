@@ -32,5 +32,14 @@ const addProductSlice = createSlice({
   },
 });
 
+// Selectors for step data
+export const selectStepData = (state, stepIndex) => state.addProduct.stepData[stepIndex] || {};
+export const selectAllStepData = (state) => state.addProduct.stepData;
+
+// Utility to get step data (for use outside React)
+export function getStepData(stepData, stepIndex) {
+  return stepData && stepData[stepIndex] ? stepData[stepIndex] : {};
+}
+
 export const { saveStepData, saveStepDataLocal, setStepLastSaved, setAllStepData, resetAddProduct } = addProductSlice.actions;
 export default addProductSlice.reducer;

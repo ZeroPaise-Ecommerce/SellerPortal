@@ -1,23 +1,40 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import useAppDispatch from '@/hooks/useAppDispatch';
+import useAppSelector from '@/hooks/useAppSelector';
+import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
 
 const Media = () => {
-    const [media, setMedia] = useState(() => ({
-        VideoUploadLink: ''
-    }));
-    const [images, setImages] = useState<(string | ArrayBuffer | null)[]>([]);
-    const [dragActive, setDragActive] = useState(false);
+    const dispatch = useAppDispatch();
+    const stepIndex = 5;
+    const initial = useAppSelector(state => selectStepData(state, stepIndex));
     const MAX_IMAGES = 8;
+    const [media, setMedia] = useState({
+        VideoUploadLink: '',
+        ...initial
+    });
+    const [images, setImages] = useState<(string | ArrayBuffer | null)[]>(initial.images || []);
+    const [dragActive, setDragActive] = useState(false);
+
+    useEffect(() => {
+        setMedia(prev => ({ ...prev, ...initial }));
+        setImages(initial.images || []);
+    }, [initial]);
 
     // Only call onDataChange if the value actually changed
     const handleChange = (field, value) => {
-        if (media[field] === value) return;
         const updated = { ...media, [field]: value };
         setMedia(updated);
+        dispatch(saveStepDataLocal({ stepIndex, data: { ...updated, images } }));
     };
+
+    // Update Redux when images change
+    useEffect(() => {
+        dispatch(saveStepDataLocal({ stepIndex, data: { ...media, images } }));
+    }, [images]);
 
     // Handle file input change
     const handleFiles = (files: FileList | null) => {

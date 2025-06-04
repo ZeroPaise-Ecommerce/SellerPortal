@@ -1,19 +1,28 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from "react";
+import React, { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import useAppDispatch from '@/hooks/useAppDispatch';
+import useAppSelector from '@/hooks/useAppSelector';
+import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
 
 const AddWarehouseInfo = () => {
-    const [warehouse, setWarehouse] = useState(() => ({
+    const dispatch = useAppDispatch();
+    const stepIndex = 3;
+    const initial = useAppSelector(state => selectStepData(state, stepIndex));
+    const [warehouse, setWarehouse] = useState({
         BatchNumber: '',
         ExpiryDate: '',
-    }));
+        ...initial
+    });
+
+    useEffect(() => { setWarehouse(prev => ({ ...prev, ...initial })); }, [initial]);
 
     // Only call onDataChange if the value actually changed
     const handleChange = (field, value) => {
-        if (warehouse[field] === value) return;
         const updated = { ...warehouse, [field]: value };
         setWarehouse(updated);
+        dispatch(saveStepDataLocal({ stepIndex, data: updated }));
     };
 
     return (

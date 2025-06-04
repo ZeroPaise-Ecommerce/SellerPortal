@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import useAppDispatch from '@/hooks/useAppDispatch';
+import { resetAddProduct } from '@/features/product/addProductSlice';
+import React, { useEffect, useState } from 'react';
 import ProductInfo from './ProductInfo';
 import Stepper from '@/components/ui/stepper';
 import ProductVariant from './ProductVariant';
@@ -12,6 +14,10 @@ import AdditionSettings from './AdditionSettings';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
 const Addproducts = () => {
+    const dispatch = useAppDispatch();
+    // Optionally clear step data on mount
+    useEffect(() => { dispatch(resetAddProduct()); }, [dispatch]);
+
     const [canProceed, setCanProceed] = useState({ 0: false });
     const [activeStep, setActiveStep] = useState(0);
     const [handleNextAttemptFns, setHandleNextAttemptFns] = useState({});

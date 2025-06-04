@@ -1,11 +1,17 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from "react";
+import useAppDispatch from '@/hooks/useAppDispatch';
+import useAppSelector from '@/hooks/useAppSelector';
+import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 const AdditionSettings = () => {
-    const [settings, setSettings] = useState(() => ({
+    const dispatch = useAppDispatch();
+    const stepIndex = 7;
+    const initial = useAppSelector(state => selectStepData(state, stepIndex));
+    const [settings, setSettings] = useState({
         productName: '',
         productSKU: '',
         productType: 'Electronics',
@@ -13,12 +19,15 @@ const AdditionSettings = () => {
         brand: 'LG',
         description: '',
         sdescription: '',
-    }));
+        ...initial
+    });
+    useEffect(() => { setSettings(prev => ({ ...prev, ...initial })); }, [initial]);
 
     // Only call onDataChange if the value actually changed
     const updateSettings = (newSettings) => {
         if (JSON.stringify(settings) === JSON.stringify(newSettings)) return;
         setSettings(newSettings);
+        dispatch(saveStepDataLocal({ stepIndex, data: newSettings }));
     };
 
     return (

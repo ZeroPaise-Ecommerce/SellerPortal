@@ -1,25 +1,32 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import useAppDispatch from '@/hooks/useAppDispatch';
+import useAppSelector from '@/hooks/useAppSelector';
+import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
 
 const ChannelListing = () => {
-    const [listing, setListing] = useState(() => ({
+    const dispatch = useAppDispatch();
+    const stepIndex = 4;
+    const initial = useAppSelector(state => selectStepData(state, stepIndex));
+    const [listing, setListing] = useState({
         Channels: '',
         Category: '',
         Title: '',
         description: '',
         Pricing: '',
         SKU: '',
-        FulfillmentType: ''
-    }));
+        FulfillmentType: '',
+        ...initial
+    });
+    useEffect(() => { setListing(prev => ({ ...prev, ...initial })); }, [initial]);
 
     // Only call onDataChange if the value actually changed
     const handleChange = (field, value) => {
-        if (listing[field] === value) return;
         const updated = { ...listing, [field]: value };
         setListing(updated);
+        dispatch(saveStepDataLocal({ stepIndex, data: updated }));
     };
 
     return (
