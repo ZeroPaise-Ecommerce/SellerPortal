@@ -25,8 +25,13 @@ const Addproducts = () => {
 
     return (
         <DashboardLayout>
-            <div className='flex text-lg font-bold'> <Plus className="h-6 w-4 mr-1" />  Add Product  </div>
-            <span>Add your product inventory</span>
+             <div className="relative flex justify-between items-center px-8 pt-8 pb-2 bg-white rounded-t-2xl shadow-sm">
+               <div className="flex flex-col items-start">
+                    <h2 className="text-2xl font-bold text-gray-800">Add Product</h2>
+                    <p className="text-sm text-gray-600 mt-1">Add your product inventory</p>
+                </div>
+             </div>
+            
             <Stepper steps={addSegments} />
         </DashboardLayout>
     )

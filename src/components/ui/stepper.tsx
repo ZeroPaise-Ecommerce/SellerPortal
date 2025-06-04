@@ -14,7 +14,7 @@ const Stepper = ({ steps }) => {
     return (
         <div className="flex flex-col w-full min-h-[80vh]">
             {/* Step indicators with horizontal lines */}
-            <div className="relative flex justify-between items-center px-8 pt-8 pb-2 bg-white rounded-t-2xl shadow-sm">
+            <div className="relative flex justify-between items-center px-8 pt-8 pb-2 bg-white shadow-sm">
                 {steps.map((step, index) => (
                     <div className="flex-1 flex flex-col items-center relative min-w-[100px]" key={index}>
                         {/* Circle */}
