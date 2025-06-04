@@ -54,7 +54,7 @@ const Media = () => {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-xl pl-4 pr-4 space-y-4 text-left">
+            <div className="bg-white rounded-xl p-4 space-y-4 text-left">
                 {/* Photos & Videos Section */}
                 <div>
                     <div className="flex flex-row gap-6 items-start mb-4">

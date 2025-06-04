@@ -21,6 +21,10 @@ const Stepper = ({ steps }) => {
                         <div
                             className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-base font-semibold z-10 shadow-md
               ${index === activeStep ? "bg-brand-blue" : index < activeStep ? "bg-green-500" : "bg-gray-300"}`}
+                            onClick={() => {
+                                if (index <= activeStep) setActiveStep(index);
+                            }}
+                            style={{ cursor: index <= activeStep ? 'pointer' : 'default' }}
                         >
                             {index + 1}
                         </div>
