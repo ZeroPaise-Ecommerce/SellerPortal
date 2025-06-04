@@ -21,7 +21,7 @@ const SEOTags = () => {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow p-4 space-y-4 text-left">
+            <div className="bg-white rounded-xl p-4 space-y-4 text-left">
                 <div className="w-100">
                     <Label htmlFor="MetaTitle" className="font-bold text-left">
                         Meta Title
