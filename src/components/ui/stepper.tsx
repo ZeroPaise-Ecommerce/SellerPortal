@@ -44,7 +44,7 @@ const Stepper = ({ steps }) => {
                     {steps[activeStep].content}
                 </div>
                 {/* Navigation inside content, always at bottom right of content area */}
-                <div className="w-full max-w-6xl flex justify-between items-center gap-4 absolute left-1/2 -translate-x-1/2" style={{ bottom: 0, padding: '15px 0px 24px 0px' }}>
+                <div className="w-full flex justify-between items-center gap-4 absolute left-1/2 -translate-x-1/2" style={{ bottom: 0, padding: '15px 0px 24px 0px' }}>
                     <button
                         onClick={handleBack}
                         disabled={activeStep === 0}
