@@ -1,15 +1,16 @@
 import React, { useState } from "react";
 
-const Stepper = ({ steps }) => {
-    const [activeStep, setActiveStep] = useState(0);
+const Stepper = ({ steps, activeStep: controlledActiveStep, setActiveStep, handleNext, handleBack }) => {
+    const [internalActiveStep, setInternalActiveStep] = useState(0);
+    const activeStep = controlledActiveStep !== undefined ? controlledActiveStep : internalActiveStep;
+    const setStep = setActiveStep || setInternalActiveStep;
 
-    const handleNext = () => {
-        if (activeStep < steps.length - 1) setActiveStep((prev) => prev + 1);
-    };
-
-    const handleBack = () => {
-        if (activeStep > 0) setActiveStep((prev) => prev - 1);
-    };
+    const next = handleNext || (() => {
+        if (activeStep < steps.length - 1) setStep((prev) => prev + 1);
+    });
+    const back = handleBack || (() => {
+        if (activeStep > 0) setStep((prev) => prev - 1);
+    });
 
     return (
         <div className="flex flex-col w-full min-h-[80vh]">
@@ -22,7 +23,7 @@ const Stepper = ({ steps }) => {
                             className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-base font-semibold z-10 shadow-md
               ${index === activeStep ? "bg-brand-blue" : index < activeStep ? "bg-green-500" : "bg-gray-300"}`}
                             onClick={() => {
-                                if (index <= activeStep) setActiveStep(index);
+                                if (index <= activeStep) setStep(index);
                             }}
                             style={{ cursor: index <= activeStep ? 'pointer' : 'default' }}
                         >
@@ -50,7 +51,7 @@ const Stepper = ({ steps }) => {
                 {/* Navigation inside content, always at bottom right of content area */}
                 <div className="w-full flex justify-between items-center gap-4 absolute left-1/2 -translate-x-1/2" style={{ bottom: 0, padding: '15px 0px 24px 0px' }}>
                     <button
-                        onClick={handleBack}
+                        onClick={back}
                         disabled={activeStep === 0}
                         className="px-6 py-2 bg-gray-200 text-gray-600 rounded font-semibold disabled:opacity-50 transition-all duration-150 ml-8"
                     >
@@ -65,7 +66,7 @@ const Stepper = ({ steps }) => {
                         </button>
                     ) : (
                         <button
-                            onClick={handleNext}
+                            onClick={next}
                             className="px-6 py-2 bg-brand-blue text-white rounded font-semibold shadow-md hover:bg-brand-dark-blue transition-all duration-150 mr-8"
                         >
                             Next
