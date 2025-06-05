@@ -95,7 +95,7 @@
 }
 
 .dashboard-content {
-  @apply p-6 lg:p-8;
+  @apply pt-4 pr-4 pb-2 pl-4;
 }
 
 .sidebar-active {
