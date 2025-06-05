@@ -12,6 +12,7 @@ import Media from './Media';
 import SEOTags from './SEOTags';
 import AdditionSettings from './AdditionSettings';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { Loader2 } from 'lucide-react';
 
 const Addproducts = () => {
     const dispatch = useAppDispatch();
@@ -21,6 +22,7 @@ const Addproducts = () => {
     const [canProceed, setCanProceed] = useState({ 0: false });
     const [activeStep, setActiveStep] = useState(0);
     const [handleNextAttemptFns, setHandleNextAttemptFns] = useState({});
+    const [loading, setLoading] = useState(false);
 
     const addSegments = [
         {
@@ -44,7 +46,11 @@ const Addproducts = () => {
             if (handleNextAttemptFns[0]) handleNextAttemptFns[0]();
             return;
         }
-        setActiveStep((prev) => Math.min(prev + 1, addSegments.length - 1));
+        setLoading(true);
+        setTimeout(() => {
+            setActiveStep((prev) => Math.min(prev + 1, addSegments.length - 1));
+            setLoading(false);
+        }, 700); // Simulate async/save, adjust as needed
     };
     const handleBack = () => setActiveStep((prev) => Math.max(prev - 1, 0));
 
@@ -62,6 +68,7 @@ const Addproducts = () => {
                 setActiveStep={setActiveStep}
                 handleNext={handleNext}
                 handleBack={handleBack}
+                loading={loading}
             />
         </DashboardLayout>
     );

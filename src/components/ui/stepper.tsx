@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { Loader2 } from 'lucide-react';
 
-const Stepper = ({ steps, activeStep: controlledActiveStep, setActiveStep, handleNext, handleBack }) => {
+const Stepper = ({ steps, activeStep: controlledActiveStep, setActiveStep, handleNext, handleBack, loading }) => {
     const [internalActiveStep, setInternalActiveStep] = useState(0);
     const activeStep = controlledActiveStep !== undefined ? controlledActiveStep : internalActiveStep;
     const setStep = setActiveStep || setInternalActiveStep;
@@ -45,14 +46,19 @@ const Stepper = ({ steps, activeStep: controlledActiveStep, setActiveStep, handl
 
             {/* Step Content with fixed height and scroll if overflow */}
             <div className="flex-1 flex flex-col items-center justify-start bg-white rounded-b-2xl shadow-sm px-8 pt-6 relative">
-                <div className="w-full max-w-6xl flex-1 overflow-y-auto text-base font-normal text-left" style={{ minHeight: 320, maxHeight: 550 }}>
+                {loading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 z-50">
+                        <Loader2 className="animate-spin h-12 w-12 text-brand-blue" />
+                    </div>
+                )}
+                <div className={`w-full max-w-6xl flex-1 overflow-y-auto text-base font-normal text-left ${loading ? 'pointer-events-none opacity-60' : ''}`} style={{ minHeight: 320, maxHeight: 550 }}>
                     {steps[activeStep].content}
                 </div>
                 {/* Navigation inside content, always at bottom right of content area */}
                 <div className="w-full flex justify-between items-center gap-4 absolute left-1/2 -translate-x-1/2" style={{ bottom: 0, padding: '15px 0px 24px 0px' }}>
                     <button
                         onClick={back}
-                        disabled={activeStep === 0}
+                        disabled={activeStep === 0 || loading}
                         className="px-6 py-2 bg-gray-200 text-gray-600 rounded font-semibold disabled:opacity-50 transition-all duration-150 ml-8"
                     >
                         Back
@@ -61,6 +67,7 @@ const Stepper = ({ steps, activeStep: controlledActiveStep, setActiveStep, handl
                         <button
                             onClick={() => alert("Stepper Finished!")}
                             className="px-6 py-2 bg-green-600 text-white rounded font-semibold shadow-md hover:bg-green-700 transition-all duration-150 mr-8"
+                            disabled={loading}
                         >
                             Finish
                         </button>
@@ -68,6 +75,7 @@ const Stepper = ({ steps, activeStep: controlledActiveStep, setActiveStep, handl
                         <button
                             onClick={next}
                             className="px-6 py-2 bg-brand-blue text-white rounded font-semibold shadow-md hover:bg-brand-dark-blue transition-all duration-150 mr-8"
+                            disabled={loading}
                         >
                             Next
                         </button>
@@ -76,6 +84,10 @@ const Stepper = ({ steps, activeStep: controlledActiveStep, setActiveStep, handl
             </div>
         </div>
     );
+};
+
+Stepper.defaultProps = {
+    loading: false
 };
 
 export default Stepper;

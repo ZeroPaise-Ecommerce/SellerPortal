@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useRequiredFields } from '@/hooks/useRequiredFields';
 
 const AdditionSettings = () => {
     const dispatch = useAppDispatch();
     const stepIndex = 7;
     const initial = useAppSelector(state => selectStepData(state, stepIndex));
-    const [settings, setSettings] = useState({
+    const allFields = {
         productName: '',
         productSKU: '',
         productType: 'Electronics',
@@ -20,15 +21,31 @@ const AdditionSettings = () => {
         description: '',
         sdescription: '',
         ...initial
-    });
-    useEffect(() => { setSettings(prev => ({ ...prev, ...initial })); }, [initial]);
-
-    // Only call onDataChange if the value actually changed
-    const updateSettings = (newSettings) => {
-        if (JSON.stringify(settings) === JSON.stringify(newSettings)) return;
-        setSettings(newSettings);
-        dispatch(saveStepDataLocal({ stepIndex, data: newSettings }));
     };
+    const {
+        fields,
+        touched,
+        isValid,
+        handleChange: baseHandleChange,
+        handleBlur,
+        handleNextAttempt,
+        setFields
+    } = useRequiredFields(["productName", "productSKU"], allFields);
+
+    // Persist to Redux on change
+    const handleChange = (field, value) => {
+        baseHandleChange(field, value);
+        dispatch(saveStepDataLocal({ stepIndex, data: { ...fields, [field]: value } }));
+    };
+
+    // Only restore from Redux if initial actually changes (prevents overwriting user input)
+    const lastInitialRef = React.useRef(initial);
+    useEffect(() => {
+        if (JSON.stringify(lastInitialRef.current) !== JSON.stringify(initial)) {
+            setFields(initial);
+            lastInitialRef.current = initial;
+        }
+    }, [initial, setFields]);
 
     return (
         <div className="space-y-6">
@@ -38,24 +55,32 @@ const AdditionSettings = () => {
                         Product Name
                     </Label>
                     <Input id="productName" type="text" className="h-9 text-sm" placeholder="Enter product name" maxLength={200}
-                        value={settings.productName}
-                        onChange={e => updateSettings({ ...settings, productName: e.target.value })}
+                        value={fields.productName}
+                        onChange={e => handleChange('productName', e.target.value)}
+                        onBlur={() => handleBlur('productName')}
                     />
+                    {touched.productName && !fields.productName.trim() && (
+                        <span className="text-xs text-red-500">Product Name is required</span>
+                    )}
                 </div>
                 <div className="w-100">
                     <Label htmlFor="productSKU" className="font-bold text-left">
                         Product SKU
                     </Label>
                     <Input id="productSKU" type="text" className="h-9 text-sm" placeholder="Enter product SKU"
-                        value={settings.productSKU}
-                        onChange={e => updateSettings({ ...settings, productSKU: e.target.value })}
+                        value={fields.productSKU}
+                        onChange={e => handleChange('productSKU', e.target.value)}
+                        onBlur={() => handleBlur('productSKU')}
                     />
+                    {touched.productSKU && !fields.productSKU.trim() && (
+                        <span className="text-xs text-red-500">Product SKU is required</span>
+                    )}
                 </div>
                 <div className="w-100">
                     <Label htmlFor="reason" className="font-bold">
                         Product Type
                     </Label>
-                    <Select value={settings.productType} onValueChange={val => updateSettings({ ...settings, productType: val })}>
+                    <Select value={fields.productType || 'Electronics'} onValueChange={val => handleChange('productType', val)}>
                         <SelectTrigger className="w-[100%] h-9">
                             <SelectValue placeholder="Electronics" />
                         </SelectTrigger>
@@ -72,7 +97,7 @@ const AdditionSettings = () => {
                     <Label htmlFor="reason" className="font-bold">
                         Category
                     </Label>
-                    <Select value={settings.category} onValueChange={val => updateSettings({ ...settings, category: val })}>
+                    <Select value={fields.category || 'all'} onValueChange={val => handleChange('category', val)}>
                         <SelectTrigger className="w-[100%] h-9">
                             <SelectValue placeholder="all" />
                         </SelectTrigger>
@@ -89,7 +114,7 @@ const AdditionSettings = () => {
                     <Label htmlFor="brand" className="font-bold">
                         Brand
                     </Label>
-                    <Select value={settings.brand} onValueChange={val => updateSettings({ ...settings, brand: val })}>
+                    <Select value={fields.brand || 'LG'} onValueChange={val => handleChange('brand', val)}>
                         <SelectTrigger className="w-[100%] h-9">
                             <SelectValue placeholder="Electronics" />
                         </SelectTrigger>
@@ -107,19 +132,13 @@ const AdditionSettings = () => {
                     <Label htmlFor="description" className="font-bold">
                         Description
                     </Label>
-                    <Textarea id="description"
-                        value={settings.description}
-                        onChange={e => updateSettings({ ...settings, description: e.target.value })}
-                    />
+                    <Textarea id="description" value={fields.description || ''} onChange={e => handleChange('description', e.target.value)} />
                 </div>
                 <div className="w-100">
                     <Label htmlFor="sdescription" className="font-bold">
                         Short Description
                     </Label>
-                    <Textarea id="sdescription"
-                        value={settings.sdescription}
-                        onChange={e => updateSettings({ ...settings, sdescription: e.target.value })}
-                    />
+                    <Textarea id="sdescription" value={fields.sdescription || ''} onChange={e => handleChange('sdescription', e.target.value)} />
                 </div>
             </div>
         </div>
