@@ -12,7 +12,6 @@ import Media from './Media';
 import SEOTags from './SEOTags';
 import AdditionSettings from './AdditionSettings';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Loader2 } from 'lucide-react';
 
 const Addproducts = () => {
     const dispatch = useAppDispatch();

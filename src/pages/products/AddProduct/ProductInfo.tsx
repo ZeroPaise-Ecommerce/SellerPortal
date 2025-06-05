@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect,useRef} from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,12 +39,12 @@ const ProductInfo = ({ onValidationChange }) => {
     };
 
     // Only restore from Redux if initial actually changes (prevents overwriting user input)
-    const lastInitialRef = React.useRef(initial);
-    React.useEffect(() => {
+    const lastInitialRef = useRef(initial);
+    useEffect(() => {
        setFields(initial);
     }, [initial, setFields]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (onValidationChange) onValidationChange(isValid, handleNextAttempt);
     }, [isValid, onValidationChange, handleNextAttempt]);
 
