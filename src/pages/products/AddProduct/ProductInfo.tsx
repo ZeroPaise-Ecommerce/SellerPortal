@@ -57,12 +57,12 @@ const ProductInfo = ({ onValidationChange }) => {
                     <Label htmlFor="productName" className="font-bold text-left">
                         Product Name*
                     </Label>
-                    <Input id="productName" type="text" required className={`h-9 text-sm placeholder:text-gray-400 ${touched.productName && !fields.productName.trim() ? 'border border-red-500 ring-1 ring-red-400' : ''}`} placeholder="Enter product name" maxLength={200}
+                    <Input id="productName" type="text" required className={`h-9 text-sm placeholder:text-gray-400 ${touched.productName && !fields.productName?.trim() ? 'border border-red-500 ring-1 ring-red-400' : ''}`} placeholder="Enter product name" maxLength={200}
                         value={fields.productName}
                         onChange={e => handleChange('productName', e.target.value)}
                         onBlur={() => handleBlur('productName')}
                     />
-                    {touched.productName && !fields.productName.trim() && (
+                    {touched.productName && !fields.productName?.trim() && (
                         <span className="text-xs text-red-500">Product Name is required</span>
                     )}
                 </div>
@@ -70,12 +70,12 @@ const ProductInfo = ({ onValidationChange }) => {
                     <Label htmlFor="productSKU" className="font-bold text-left">
                         Product SKU*
                     </Label>
-                    <Input id="productSKU" type="text" required className={`h-9 text-sm placeholder:text-gray-400 ${touched.productSKU && !fields.productSKU.trim() ? 'border border-red-500 ring-1 ring-red-400' : ''}`} placeholder="Enter product SKU"
+                    <Input id="productSKU" type="text" required className={`h-9 text-sm placeholder:text-gray-400 ${touched.productSKU && !fields.productSKU?.trim() ? 'border border-red-500 ring-1 ring-red-400' : ''}`} placeholder="Enter product SKU"
                         value={fields.productSKU}
                         onChange={e => handleChange('productSKU', e.target.value)}
                         onBlur={() => handleBlur('productSKU')}
                     />
-                    {touched.productSKU && !fields.productSKU.trim() && (
+                    {touched.productSKU && !fields.productSKU?.trim() && (
                         <span className="text-xs text-red-500">Product SKU is required</span>
                     )}
                 </div>

@@ -11,8 +11,13 @@ export function useRequiredFields(requiredFields: string[], initialValues: Recor
         requiredFields.forEach(f => { obj[f] = false; });
         return obj;
     });
-
-    const isValid = requiredFields.every(f => fields[f]?.trim() !== "");
+    const isValid = requiredFields.every((f) => {
+        const fieldLength = Object.keys(fields).length;
+        if (fieldLength === 0) {
+            return initialValues[f]?.trim() !== "" || initialValues[f]?.trim() === undefined || initialValues[f] === null;
+        }
+        return fields[f]?.trim() !== ""
+});
 
     const handleChange = useCallback((field: string, value: string) => {
         setFields(prev => ({ ...prev, [field]: value }));
