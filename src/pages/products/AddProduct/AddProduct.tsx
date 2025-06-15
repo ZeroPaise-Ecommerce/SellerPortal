@@ -18,7 +18,7 @@ const Addproducts = () => {
     // Optionally clear step data on mount
     useEffect(() => { dispatch(resetAddProduct()); }, [dispatch]);
 
-    const [canProceed, setCanProceed] = useState({ 0: false });
+    const [canProceed, setCanProceed] = useState(Object.fromEntries(addSegments.map((_, i) => [i, false])));
     const [activeStep, setActiveStep] = useState(0);
     const [handleNextAttemptFns, setHandleNextAttemptFns] = useState({});
     const [loading, setLoading] = useState(false);
@@ -31,25 +31,69 @@ const Addproducts = () => {
                 setHandleNextAttemptFns(prev => ({ ...prev, 0: handleNextAttempt }));
             }} />
         },
-        { label: 'Variance', content: <ProductVariant /> },
-        { label: 'Pricing and Taxing', content: <PriceAndTax /> },
-        { label: 'Warehousing', content: <AddWarehouseInfo /> },
-        { label: 'Listing', content: <ChannelListing /> },
-        { label: 'Media', content: <Media /> },
-        { label: 'SEO', content: <SEOTags /> },
-        { label: 'Additional Settings', content: <AdditionSettings /> },
+        {
+            label: 'Variance',
+            content: <ProductVariant onValidationChange={(valid, handleNextAttempt) => {
+                setCanProceed(prev => ({ ...prev, 1: valid }));
+                setHandleNextAttemptFns(prev => ({ ...prev, 1: handleNextAttempt }));
+            }} />
+        },
+        {
+            label: 'Pricing and Taxing',
+            content: <PriceAndTax onValidationChange={(valid, handleNextAttempt) => {
+                setCanProceed(prev => ({ ...prev, 2: valid }));
+                setHandleNextAttemptFns(prev => ({ ...prev, 2: handleNextAttempt }));
+            }} />
+        },
+        {
+            label: 'Warehousing',
+            content: <AddWarehouseInfo onValidationChange={(valid, handleNextAttempt) => {
+                setCanProceed(prev => ({ ...prev, 3: valid }));
+                setHandleNextAttemptFns(prev => ({ ...prev, 3: handleNextAttempt }));
+            }} />
+        },
+        {
+            label: 'Listing',
+            content: <ChannelListing onValidationChange={(valid, handleNextAttempt) => {
+                setCanProceed(prev => ({ ...prev, 4: valid }));
+                setHandleNextAttemptFns(prev => ({ ...prev, 4: handleNextAttempt }));
+            }} />
+        },
+        {
+            label: 'Media',
+            content: <Media onValidationChange={(valid, handleNextAttempt) => {
+                setCanProceed(prev => ({ ...prev, 5: valid }));
+                setHandleNextAttemptFns(prev => ({ ...prev, 5: handleNextAttempt }));
+            }} />
+        },
+        {
+            label: 'SEO',
+            content: <SEOTags onValidationChange={(valid, handleNextAttempt) => {
+                setCanProceed(prev => ({ ...prev, 6: valid }));
+                setHandleNextAttemptFns(prev => ({ ...prev, 6: handleNextAttempt }));
+            }} />
+        },
+        {
+            label: 'Additional Settings',
+            content: <AdditionSettings onValidationChange={(valid, handleNextAttempt) => {
+                setCanProceed(prev => ({ ...prev, 7: valid }));
+                setHandleNextAttemptFns(prev => ({ ...prev, 7: handleNextAttempt }));
+            }} />
+        },
     ];
 
     const handleNext = () => {
-        if (activeStep === 0 && !canProceed[0]) {
-            if (handleNextAttemptFns[0]) handleNextAttemptFns[0]();
+        if (!canProceed[activeStep]) {
+            if (handleNextAttemptFns[activeStep]) {
+                handleNextAttemptFns[activeStep]();
+            }
             return;
         }
         setLoading(true);
         setTimeout(() => {
             setActiveStep((prev) => Math.min(prev + 1, addSegments.length - 1));
             setLoading(false);
-        }, 700); // Simulate async/save, adjust as needed
+        }, 700);
     };
     const handleBack = () => setActiveStep((prev) => Math.max(prev - 1, 0));
 
