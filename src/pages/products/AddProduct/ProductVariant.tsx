@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import useAppDispatch from '@/hooks/useAppDispatch';
 import useAppSelector from '@/hooks/useAppSelector';
 import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
+
+const defaultVariant = {
+    variantoptions: '',
+    variantpricing: '',
+    variantstock: ''
+};
 
 const ProductVariant = () => {
     const dispatch = useAppDispatch();
     const stepIndex = 1;
     const initial = useAppSelector(state => selectStepData(state, stepIndex));
-    const [variant, setVariant] = useState({
-        variantoptions: '',
-        variantpricing: '',
-        variantstock: '',
-        ...initial
-    });
-    useEffect(() => { setVariant({ ...variant, ...initial }); }, [initial]);
+    const [variant, setVariant] = useState({ ...defaultVariant, ...initial });
+
+    useEffect(() => {
+        // Only update if the content is actually different
+        const merged = { ...defaultVariant, ...initial };
+        if (JSON.stringify(merged) !== JSON.stringify(variant)) {
+            setVariant(merged);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initial]);
+
     const handleChange = (field, value) => {
         const updated = { ...variant, [field]: value };
         setVariant(updated);
@@ -46,7 +54,8 @@ const ProductVariant = () => {
                     <Input id="variantstock" type="number" className="h-9 text-sm" placeholder="Enter variant stock" value={variant.variantstock} onChange={e => handleChange('variantstock', e.target.value)} />
                 </div>
             </div>
-        </div>)
-}
+        </div>
+    );
+};
 
 export default ProductVariant;

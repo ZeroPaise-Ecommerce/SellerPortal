@@ -6,6 +6,17 @@ import useAppDispatch from '@/hooks/useAppDispatch';
 import useAppSelector from '@/hooks/useAppSelector';
 import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
 
+// Example default values, adjust as needed
+const defaultChannel = {
+    Channels: '',
+    Category: '',
+    Title:'',
+    description: '',
+    Pricing: '',
+    SKU: '',
+    FulfillmentType: ''
+};
+
 const ChannelListing = () => {
     const dispatch = useAppDispatch();
     const stepIndex = 4;
@@ -20,8 +31,14 @@ const ChannelListing = () => {
         FulfillmentType: '',
         ...initial
     });
-    useEffect(() => { setListing(prev => ({ ...prev, ...initial })); }, [initial]);
+     useEffect(() => {
+        const merged = { ...defaultChannel, ...initial };
+        if (JSON.stringify(merged) !== JSON.stringify(listing)) {
+            setListing(merged);
+        }
+    }, [initial]);
 
+    
     // Only call onDataChange if the value actually changed
     const handleChange = (field, value) => {
         const updated = { ...listing, [field]: value };

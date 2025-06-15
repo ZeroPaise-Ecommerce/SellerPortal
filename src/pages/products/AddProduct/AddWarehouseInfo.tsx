@@ -6,19 +6,24 @@ import useAppDispatch from '@/hooks/useAppDispatch';
 import useAppSelector from '@/hooks/useAppSelector';
 import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
 
+const defaultWarehouse = {
+    BatchNumber: '',
+    ExpiryDate: ''
+};
+
 const AddWarehouseInfo = () => {
     const dispatch = useAppDispatch();
     const stepIndex = 3;
     const initial = useAppSelector(state => selectStepData(state, stepIndex));
-    const [warehouse, setWarehouse] = useState({
-        BatchNumber: '',
-        ExpiryDate: '',
-        ...initial
-    });
+    const [warehouse, setWarehouse] = useState({ ...defaultWarehouse, ...initial });
 
-    useEffect(() => { setWarehouse(prev => ({ ...prev, ...initial })); }, [initial]);
+    useEffect(() => {
+        const merged = { ...defaultWarehouse, ...initial };
+        if (JSON.stringify(merged) !== JSON.stringify(warehouse)) {
+            setWarehouse(merged);
+        }
+    }, [initial]);
 
-    // Only call onDataChange if the value actually changed
     const handleChange = (field, value) => {
         const updated = { ...warehouse, [field]: value };
         setWarehouse(updated);
@@ -32,7 +37,11 @@ const AddWarehouseInfo = () => {
                     <Label htmlFor="BatchNumber" className="font-bold text-left">
                         Batch Number
                     </Label>
-                    <Input id="BatchNumber" type="text" className="h-9 text-sm" placeholder="Enter Batch Number"
+                    <Input
+                        id="BatchNumber"
+                        type="text"
+                        className="h-9 text-sm"
+                        placeholder="Enter Batch Number"
                         value={warehouse.BatchNumber}
                         onChange={e => handleChange('BatchNumber', e.target.value)}
                     />
@@ -41,8 +50,11 @@ const AddWarehouseInfo = () => {
                     <Label htmlFor="ExpiryDate" className="font-bold text-left">
                         Expiry Date and Time
                     </Label>
-                    {/* <Calendar /> */}
-                    <Input id="ExpiryDate" type="text" className="h-9 text-sm" placeholder="Enter Expiry Date"
+                    <Input
+                        id="ExpiryDate"
+                        type="text"
+                        className="h-9 text-sm"
+                        placeholder="Enter Expiry Date"
                         value={warehouse.ExpiryDate}
                         onChange={e => handleChange('ExpiryDate', e.target.value)}
                     />

@@ -40,9 +40,11 @@ const ProductInfo = ({ onValidationChange }) => {
 
     // Only restore from Redux if initial actually changes (prevents overwriting user input)
     const lastInitialRef = useRef(initial);
-    useEffect(() => {
-       setFields(initial);
-    }, [initial, setFields]);
+   useEffect(() => {
+  if (JSON.stringify(initial) !== JSON.stringify(fields)) {
+    setFields(initial);
+  }
+}, [initial, setFields]);
 
     useEffect(() => {
         if (onValidationChange) onValidationChange(isValid, handleNextAttempt);
