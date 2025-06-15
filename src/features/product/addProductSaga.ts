@@ -1,5 +1,5 @@
 import { takeLatest, call, put } from 'redux-saga/effects';
-import { saveStepData, setStepLastSaved } from './addProductSlice';
+import { saveStepData, saveStepDataFailed, setStepLastSaved } from './addProductSlice';
 import {
   saveProductInfo,
   saveProductVariant,
@@ -47,6 +47,7 @@ function* handleSaveStepData(action) {
     yield put(setStepLastSaved({ stepIndex, data }));
   } catch (e) {
     // handle error (optional)
+    yield put(saveStepDataFailed({ stepIndex, error: e.message || 'API failed' }));
   }
 }
 

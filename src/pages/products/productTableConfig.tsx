@@ -47,7 +47,6 @@ export const getProductTableColumns = (
     header: "Status",
     accessor: "status",
     render: (p: any) => {
-      debugger;
       <StatusBadge status={p.status} config={statusConfig} showIcon />
     },
   },

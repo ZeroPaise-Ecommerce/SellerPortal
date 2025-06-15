@@ -6,9 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRequiredFields } from "@/hooks/useRequiredFields";
 import useAppDispatch from '@/hooks/useAppDispatch';
 import useAppSelector from '@/hooks/useAppSelector';
-import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
+import { saveStepData, saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
 
-const ProductInfo = ({ onValidationChange }) => {
+const ProductInfo = ({ onValidationChange, onStepSubmit }) => {
     const dispatch = useAppDispatch();
     const stepIndex = 0;
     const initial = useAppSelector(state => selectStepData(state, stepIndex));
@@ -38,17 +38,28 @@ const ProductInfo = ({ onValidationChange }) => {
         dispatch(saveStepDataLocal({ stepIndex, data: { ...fields, [field]: value } }));
     };
 
-    // Only restore from Redux if initial actually changes (prevents overwriting user input)
-    const lastInitialRef = useRef(initial);
    useEffect(() => {
-  if (JSON.stringify(initial) !== JSON.stringify(fields)) {
-    setFields(initial);
-  }
-}, [initial, setFields]);
+      if (JSON.stringify(initial) !== JSON.stringify(fields)) {
+        setFields(initial);
+      }
+    }, [initial, setFields]);
 
     useEffect(() => {
         if (onValidationChange) onValidationChange(isValid, handleNextAttempt);
     }, [isValid, onValidationChange, handleNextAttempt]);
+
+     // This function will be called by the parent when Next is clicked and validation passes
+    const submitStep = async () => {
+        await dispatch(saveStepData({ stepIndex, data: fields }));
+    //    // Simulate async operation, e.g. API call
+    //     await new Promise(resolve => setTimeout(resolve, 700));
+    //     console.log("Submitting product info:", fields);
+    };
+
+    // Pass submitStep to parent
+    useEffect(() => {
+        if (onStepSubmit) onStepSubmit(submitStep);
+    }, [onStepSubmit, submitStep]);
 
     return (
         <div className="space-y-6">

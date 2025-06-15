@@ -28,7 +28,6 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({
     ...defaultConfig,
     ...config[status],
   };
-  debugger;
 
   return (
     <Badge variant={variant} className={cn("gap-1", className)}>
