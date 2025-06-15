@@ -2,14 +2,15 @@ import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+// Textarea is imported but not used, consider removing if not needed.
+// import { Textarea } from "@/components/ui/textarea";
 import useAppDispatch from '@/hooks/useAppDispatch';
 import useAppSelector from '@/hooks/useAppSelector';
 import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
 
-const Media = () => {
+const Media = ({ onValidationChange }) => {
     const dispatch = useAppDispatch();
-    const stepIndex = 5;
+    const stepIndex = 5; // Assuming this is for the sixth step
     const initial = useAppSelector(state => selectStepData(state, stepIndex));
     const MAX_IMAGES = 8;
     const [media, setMedia] = useState({
@@ -23,6 +24,13 @@ const Media = () => {
         setMedia(prev => ({ ...prev, ...initial }));
         setImages(initial.images || []);
     }, [initial]);
+
+    // Propagate validation status
+    useEffect(() => {
+        if (onValidationChange) {
+            onValidationChange(true, () => {}); // Always valid, empty function for handleNextAttempt
+        }
+    }, [onValidationChange]);
 
     // Only call onDataChange if the value actually changed
     const handleChange = (field, value) => {
