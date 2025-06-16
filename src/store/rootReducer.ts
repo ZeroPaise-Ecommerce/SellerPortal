@@ -1,10 +1,8 @@
 import { combineReducers } from '@reduxjs/toolkit';
-import productReducer from '../features/product/productSlice';
-import addProductReducer from '@/features/product/addProductSlice';
-
+//import productReducer from '../features/product/productSlice';
+import { productReducer } from './Inventory/product/reducer';
 const rootReducer = combineReducers({
   product: productReducer,
-  addProduct: addProductReducer,
   // Add other reducers here
 });
 

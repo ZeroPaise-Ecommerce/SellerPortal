@@ -38,6 +38,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { fetchProductsStart } from '@/features/product/productSlice';
+
 import ConfigurableTable from "@/components/configurableTable/ConfigurableTable";
 import { getProductTableColumns } from "./productTableConfig";
 import { useDispatch, useSelector } from "react-redux";
@@ -49,7 +50,6 @@ const Products = () => {
   const dispatch = useDispatch();
   const { products, loading, error } = useSelector(selectProductState);  
   const navigate = useNavigate();
-
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeStatus, setActiveStatus] = useState<{ [key: string]: boolean }>({});
@@ -91,6 +91,8 @@ const Products = () => {
       </DashboardLayout>
     );
   }
+
+
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
