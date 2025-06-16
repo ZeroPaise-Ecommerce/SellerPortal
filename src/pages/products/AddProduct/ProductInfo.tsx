@@ -1,88 +1,73 @@
-import React, {useEffect,useRef} from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useRequiredFields } from "@/hooks/useRequiredFields";
-import useAppDispatch from '@/hooks/useAppDispatch';
-import useAppSelector from '@/hooks/useAppSelector';
-import { saveStepDataLocal, selectStepData } from '@/features/product/addProductSlice';
+import { v4 as uuidv4 } from 'uuid';
 
-const ProductInfo = ({ onValidationChange }) => {
-    const dispatch = useAppDispatch();
-    const stepIndex = 0;
-    const initial = useAppSelector(state => selectStepData(state, stepIndex));
-    const allFields = {
-        productName: '',
-        productSKU: '',
-        productType: 'Electronics',
-        category: 'all',
-        brand: 'LG',
-        description: '',
-        sdescription: '',
-        ...initial
-    };
-    const {
-        fields,
-        touched,
-        isValid,
-        handleChange: baseHandleChange,
-        handleBlur,
-        handleNextAttempt,
-        setFields
-    } = useRequiredFields(["productName", "productSKU"], allFields);
+interface basicInfo {
+  id: string;
+  productName: string;
+  productSKU: string;
+  productType: string;
+  category: string;
+  brand: string;
+  description: string;
+  shortDescription: string;
+  createdDate: string;
+  updatedDate: string;
+  createdBy: string;
+  updatedBy: string;
+  operation: number;
+}
 
-    // Persist to Redux on change
-    const handleChange = (field, value) => {
-        baseHandleChange(field, value);
-        dispatch(saveStepDataLocal({ stepIndex, data: { ...fields, [field]: value } }));
-    };
+interface Props {
+  BasicInfo: basicInfo;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleSelectChange: (field: keyof basicInfo, value: string) => void;
+}
 
-    // Only restore from Redux if initial actually changes (prevents overwriting user input)
-    const lastInitialRef = useRef(initial);
-    useEffect(() => {
-       setFields(initial);
-    }, [initial, setFields]);
-
-    useEffect(() => {
-        if (onValidationChange) onValidationChange(isValid, handleNextAttempt);
-    }, [isValid, onValidationChange, handleNextAttempt]);
-
+const ProductInfo: React.FC<Props> = ({ BasicInfo, handleChange, handleSelectChange }) => {    
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-xl p-4 space-y-4 text-left">
+            <div className="bg-white rounded-xl shadow p-4 space-y-4 text-left">
                 <div className="w-100">
-                    <Label htmlFor="productName" className="font-bold text-left">
-                        Product Name*
+                    <Label 
+                        htmlFor="productName" 
+                        className="font-bold text-left">
+                        Product Name
                     </Label>
-                    <Input id="productName" type="text" required className={`h-9 text-sm placeholder:text-gray-400 ${touched.productName && !fields.productName.trim() ? 'border border-red-500 ring-1 ring-red-400' : ''}`} placeholder="Enter product name" maxLength={200}
-                        value={fields.productName}
-                        onChange={e => handleChange('productName', e.target.value)}
-                        onBlur={() => handleBlur('productName')}
-                    />
-                    {touched.productName && !fields.productName.trim() && (
-                        <span className="text-xs text-red-500">Product Name is required</span>
-                    )}
+                    <Input 
+                        name="productName" 
+                        type="text" 
+                        className="h-9 text-sm" 
+                        placeholder="Enter product name" 
+                        value={BasicInfo.productName}
+                        onChange={handleChange}
+                        maxLength={200} />
                 </div>
                 <div className="w-100">
-                    <Label htmlFor="productSKU" className="font-bold text-left">
-                        Product SKU*
+                    <Label 
+                        htmlFor="productSKU" 
+                        className="font-bold text-left">
+                        Product SKU
                     </Label>
-                    <Input id="productSKU" type="text" required className={`h-9 text-sm placeholder:text-gray-400 ${touched.productSKU && !fields.productSKU.trim() ? 'border border-red-500 ring-1 ring-red-400' : ''}`} placeholder="Enter product SKU"
-                        value={fields.productSKU}
-                        onChange={e => handleChange('productSKU', e.target.value)}
-                        onBlur={() => handleBlur('productSKU')}
-                    />
-                    {touched.productSKU && !fields.productSKU.trim() && (
-                        <span className="text-xs text-red-500">Product SKU is required</span>
-                    )}
+                    <Input 
+                    id="productSKU"
+                        name="productSKU" 
+                        value={BasicInfo.productSKU}
+                         onChange={handleChange}
+                        type="text" 
+                        className="h-9 text-sm" 
+                        placeholder="Enter product SKU" />
                 </div>
 
                 <div className="w-100">
                     <Label htmlFor="reason" className="font-bold">
                         Product Type
                     </Label>
-                    <Select value={fields.productType || 'Electronics'} onValueChange={val => handleChange('productType', val)}>
+                    <Select name="productType"
+                            value={BasicInfo.productType}
+                            onValueChange={(val) => handleSelectChange("productType", val)}>
                         <SelectTrigger className="w-[100%] h-9">
                             <SelectValue placeholder="Electronics" />
                         </SelectTrigger>
@@ -101,7 +86,10 @@ const ProductInfo = ({ onValidationChange }) => {
                     <Label htmlFor="reason" className="font-bold">
                         Category
                     </Label>
-                    <Select value={fields.category || 'all'} onValueChange={val => handleChange('category', val)}>
+                    <Select 
+                    name="category"
+                    value={BasicInfo.category}
+                             onValueChange={(val) => handleSelectChange("category", val)}>
                         <SelectTrigger className="w-[100%] h-9">
                             <SelectValue placeholder="all" />
                         </SelectTrigger>
@@ -120,7 +108,10 @@ const ProductInfo = ({ onValidationChange }) => {
                     <Label htmlFor="brand" className="font-bold">
                         Brand
                     </Label>
-                    <Select value={fields.brand || 'LG'} onValueChange={val => handleChange('brand', val)}>
+                    <Select 
+                    name="brand"
+                    value={BasicInfo.brand}
+                             onValueChange={(val) => handleSelectChange("brand", val)}>
                         <SelectTrigger className="w-[100%] h-9">
                             <SelectValue placeholder="Electronics" />
                         </SelectTrigger>
@@ -139,14 +130,14 @@ const ProductInfo = ({ onValidationChange }) => {
                     <Label htmlFor="description" className="font-bold">
                         Description
                     </Label>
-                    <Textarea id="description" value={fields.description || ''} onChange={e => handleChange('description', e.target.value)} />
+                    <Textarea name="description"  onChange={handleChange} value={BasicInfo.description} id="description" />
                 </div>
 
                 <div className="w-100">
                     <Label htmlFor="sdescription" className="font-bold">
                         Short Description
                     </Label>
-                    <Textarea id="sdescription" value={fields.sdescription || ''} onChange={e => handleChange('sdescription', e.target.value)} />
+                    <Textarea name="shortDescription"  onChange={handleChange} value={BasicInfo.shortDescription} />
                 </div>
 
             </div>

@@ -42,6 +42,9 @@ import IosApp from "./pages/platform-control/IosApp";
 import NewOrder from "./pages/NewOrder";
 import { BarChart2, PackageOpen, SettingsIcon, ShoppingCart } from "lucide-react";
 import Addproducts from "./pages/products/AddProduct/AddProduct";
+import Inventory from './pages/Inventory';
+import Suppliers from './pages/inventory/purchase/Suppliers';
+import PurchaseOrders from './pages/inventory/purchase/PurchaseOrders';
 
 const Router = () => (
   <BrowserRouter>
@@ -67,6 +70,16 @@ const Router = () => (
       <Route path="/reports" element={<Reports />} />
       <Route path="/storename/pos" element={<StorePOS />} />
       <Route path="/cart-checkout" element={<CartCheckout />} />
+      <Route path="/inventory" element={<Inventory />} />
+
+      {/* Inventory Sales Routes */}
+          <Route path="/inventory/sales/customers" element={<Inventory />} />
+          <Route path="/inventory/sales/orders" element={<Inventory />} />
+          <Route path="/inventory/sales/invoices" element={<Inventory />} />
+          <Route path="/inventory/sales/payments-in" element={<Inventory />} />
+          <Route path="/inventory/sales/returns" element={<Inventory />} />
+          <Route path="/inventory/sales/credit-notes" element={<Inventory />} />
+
       {/* Settings Routes */}
       <Route path="/settings" element={<Settings />}>
         <Route path="general" element={<General />} />

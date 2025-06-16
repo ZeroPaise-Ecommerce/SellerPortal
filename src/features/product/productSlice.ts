@@ -17,6 +17,7 @@ interface Product {
   dailySales: { day: string; sales: number }[];
   variants: { id: number; color: string; price: number; stock: number }[];
   relatedProducts: string[];
+  basicInfo: object
 }
 
 interface ProductState {

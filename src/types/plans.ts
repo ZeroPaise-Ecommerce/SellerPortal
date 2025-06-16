@@ -28,3 +28,12 @@ export interface Transaction {
   amount: string;
   status: "Paid" | "Pending" | "Failed";
 }
+
+// types/GatewayRequest.ts
+export interface GatewayRequest {
+  url: string;
+  method: string;
+  headers?: Record<string, string>;
+  body?: any;
+}
+
