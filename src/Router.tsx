@@ -42,7 +42,7 @@ import IosApp from "./pages/platform-control/IosApp";
 import NewOrder from "./pages/NewOrder";
 import { BarChart2, PackageOpen, SettingsIcon, ShoppingCart } from "lucide-react";
 import Addproducts from "./pages/products/AddProduct/AddProduct";
-import Inventory from './pages/Inventory';
+import Inventory from "./pages/inventory/Inventory";
 import Suppliers from './pages/inventory/purchase/Suppliers';
 import PurchaseOrders from './pages/inventory/purchase/PurchaseOrders';
 

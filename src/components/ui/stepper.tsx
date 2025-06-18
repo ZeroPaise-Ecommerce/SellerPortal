@@ -3,8 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {useEffect} from 'react'
 import {addProductRequest} from '../../store/Inventory/product/actions'
 
-const Stepper = ({ steps, handleOnClick }) => {
-    const [activeStep, setActiveStep] = useState(0);
+const Stepper = ({ steps, handleNext, handleBack, activeStep, setActiveStep ,navigationSection = null }) => {
+    // const [activeStep, setActiveStep] = useState(0);
     const stageCompleted = useSelector((state: any) => state.Product?.stageCompleted || false);
     const dispatch = useDispatch();
 
@@ -16,49 +16,62 @@ const Stepper = ({ steps, handleOnClick }) => {
         }
     }, [stageCompleted]);
 
-    const handleNext = () => {
-        dispatch(handleOnClick());
-        if (activeStep < steps.length - 1) setActiveStep((prev) => prev + 1);
-    };
-
-    const handleBack = () => {
-        if (activeStep > 0) setActiveStep((prev) => prev - 1);
-    };
-
     return (
         <div className="mx-auto p-6">
             {/* Step indicators with horizontal lines */}
             <div className="relative flex justify-between items-center mb-10">
-                {steps.map((step, index) => (
-                    <div className="flex-1 flex flex-col items-center relative" key={index}>
+                {steps.map((step, index) => {
+                     const isActive = index === activeStep;
+                const isCompleted = index < activeStep;
+                // Line is active if it connects to a completed step OR the current active step
+                const isLineActive = index < activeStep + 1; // Corrected logic based on screenshot
+                    return (<div className="flex-1 flex flex-col items-center relative" key={index}>
                         {/* Circle */}
                         <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-white z-10
-              ${index <= activeStep ? "bg-brand-blue" : "bg-gray-300"}`}
-                        >
-                            {index + 1}
-                        </div>
+                                className={`relative w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300
+                                    ${isCompleted ? 'bg-green-500' : isActive ? 'bg-blue-500' : 'bg-gray-300'}
+                                `}
+                            >
+                                {isCompleted ? (
+                                    // Checkmark SVG for completed steps
+                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                ) : (
+                                    // Render the Lucide icon for active/inactive steps
+                                    <step.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-800'}`} />
+                                )}
+                            </div>
                         {/* Label */}
-                        <span className="text-sm mt-2 text-center">{step.label}</span>
+                         <div
+                                className={`mt-2 text-center text-xs whitespace-nowrap transition-colors duration-300
+                                    ${isActive ? 'text-blue-600 font-semibold' : isCompleted ? 'text-green-600' : 'text-gray-600'}
+                                `}
+                            >
+                                {step.label}
+                            </div>
 
                         {/* Line to next step */}
                         {index < steps.length - 1 && (
                             <div
-                                className={`absolute top-4 left-1/2 right-[-50%] h-1 
-                ${index < activeStep ? "bg-brand-blue" : "bg-gray-300"}`}
+                                className={`absolute top-4 left-[63%] right-[-37%] h-1 
+                                ${index < activeStep ? "bg-brand-blue" : "bg-gray-300"}`}
                             />
                         )}
-                    </div>
-                ))}
+                    </div>)
+                })}
             </div>
 
             {/* Step Content */}
-            <div className="text-center mb-6 text-lg font-medium">
+            <div className="mb-6 text-lg font-medium">
                 {steps[activeStep].content}
             </div>
 
-            {/* Navigation */}
-            <div className="flex justify-between">
+            {/* Optional Navigation Section */}
+            {navigationSection != null ? (
+                navigationSection
+            ) : (
+            <div className="flex justify-between pt-6 border-t mt-6">
                 <button
                     onClick={handleBack}
                     disabled={activeStep === 0}
@@ -82,6 +95,7 @@ const Stepper = ({ steps, handleOnClick }) => {
                     </button>
                 )}
             </div>
+            )}
         </div>
     );
 };

@@ -1,45 +1,176 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Trash2, 
-  Upload, 
-  Image as ImageIcon,
-  Tag,
-  Package,
-  Globe,
-  Eye,
-  Settings,
   Info,
   Palette,
   IndianRupee,
   Warehouse,
   Share2,
   Camera,
-  Search
+  Search,
+  Eye,
+  Settings,
+  Trash2,
+  Plus,
+  ImageIcon,
 } from "lucide-react";
-import AddBrandForm from "./forms/AddBrandForm";
-import AddCategoryForm from "./forms/AddCategoryForm";
-import AddCountryForm from "./forms/AddCountryForm";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import Stepper from "../ui/stepper";
+import useAppDispatch from "@/hooks/useAppDispatch";
+import { addProductRequest } from "@/store/Inventory/product/actions";
+import { Switch } from "../ui/switch";
+import { Input } from "../ui/input";
+import { add } from "date-fns";
 
-interface AddItemFormProps {
-  onClose: () => void;
-}
+// --- START: Inlined Form Components (AddBrandForm, AddCategoryForm, AddCountryForm) ---
+// These components were previously in separate files but are inlined here to resolve import errors.
+
+const AddBrandForm = ({ isOpen, onClose, onSave }) => {
+  const [brandName, setBrandName] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSave = () => {
+    if (brandName.trim() === '') {
+      setError('Brand name cannot be empty.');
+      return;
+    }
+    onSave(brandName);
+    setBrandName('');
+    setError('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md space-y-4">
+        <h2 className="text-xl font-semibold">Add New Brand</h2>
+        <div className="space-y-2">
+          <label htmlFor="newBrandName" className="block text-sm font-medium text-gray-700">Brand Name</label>
+          <input
+            type="text"
+            id="newBrandName"
+            placeholder="e.g., Nike, Adidas"
+            value={brandName}
+            onChange={(e) => {
+              setBrandName(e.target.value);
+              if (e.target.value.trim() !== '') setError(''); // Clear error on input
+            }}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'}`}
+          />
+          {error && <p className="text-sm text-red-500">{error}</p>}
+        </div>
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            Save Brand
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AddCategoryForm = ({ isOpen, onClose, onSave }) => {
+  const [categoryName, setCategoryName] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSave = () => {
+    if (categoryName.trim() === '') {
+      setError('Category name cannot be empty.');
+      return;
+    }
+    onSave(categoryName);
+    setCategoryName('');
+    setError('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md space-y-4">
+        <h2 className="text-xl font-semibold">Add New Category</h2>
+        <div className="space-y-2">
+          <label htmlFor="newCategoryName" className="block text-sm font-medium text-gray-700">Category Name</label>
+          <input
+            type="text"
+            id="newCategoryName"
+            placeholder="e.g., Electronics, Apparel"
+            value={categoryName}
+            onChange={(e) => {
+              setCategoryName(e.target.value);
+              if (e.target.value.trim() !== '') setError(''); // Clear error on input
+            }}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'}`}
+          />
+          {error && <p className="text-sm text-red-500">{error}</p>}
+        </div>
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            Save Category
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AddCountryForm = ({ isOpen, onClose, onSave }) => {
+  const [countryName, setCountryName] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSave = () => {
+    if (countryName.trim() === '') {
+      setError('Country name cannot be empty.');
+      return;
+    }
+    onSave(countryName);
+    setCountryName('');
+    setError('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md space-y-4">
+        <h2 className="text-xl font-semibold">Add New Country</h2>
+        <div className="space-y-2">
+          <label htmlFor="newCountryName" className="block text-sm font-medium text-gray-700">Country Name</label>
+          <input
+            type="text"
+            id="newCountryName"
+            placeholder="e.g., India, USA"
+            value={countryName}
+            onChange={(e) => {
+              setCountryName(e.target.value);
+              if (e.target.value.trim() !== '') setError(''); // Clear error on input
+            }}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'}`}
+          />
+          {error && <p className="text-sm text-red-500">{error}</p>}
+        </div>
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            Save Country
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface VariantCombination {
   id: string;
@@ -51,12 +182,13 @@ interface VariantCombination {
   image?: string;
 }
 
-const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
-  const [activeTab, setActiveTab] = useState("basic");
-  const [productType, setProductType] = useState("simple");
-  const [variants, setVariants] = useState([{ option: "", values: [""] }]);
-  const [variantCombinations, setVariantCombinations] = useState<VariantCombination[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+const AddItemForm = ({ onClose }) => {
+  const dispatch = useAppDispatch();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [errors, setErrors] = useState({});
+  const [showAddBrand, setShowAddBrand] = useState(false);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showAddCountry, setShowAddCountry] = useState(false);
   const [channels, setChannels] = useState({
     website: true,
     amazon: false,
@@ -64,26 +196,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
     meesho: false,
     myntra: false
   });
-  const [selectedChannel, setSelectedChannel] = useState("website");
-  const [brands, setBrands] = useState([
-    { name: "Apple", value: "apple" },
-    { name: "Samsung", value: "samsung" },
-    { name: "OnePlus", value: "oneplus" }
-  ]);
-  const [categories, setCategories] = useState([
-    { name: "Electronics", value: "electronics" },
-    { name: "Accessories", value: "accessories" },
-    { name: "Clothing", value: "clothing" }
-  ]);
-  const [countries, setCountries] = useState([
-    { name: "India", value: "india" },
-    { name: "China", value: "china" },
-    { name: "USA", value: "usa" }
-  ]);
-  const [showAddBrand, setShowAddBrand] = useState(false);
-  const [showAddCategory, setShowAddCategory] = useState(false);
-  const [showAddCountry, setShowAddCountry] = useState(false);
-  const [returnSettings, setReturnSettings] = useState({
+    const [returnSettings, setReturnSettings] = useState({
     isReturnable: true,
     returnWindowDays: "7",
     returnType: "refund_or_replacement",
@@ -92,7 +205,33 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
     returnShippingBorneBy: "seller"
   });
 
-  const generateVariantCombinations = () => {
+  // State for all fields (add more as needed for each step)
+  const [productName, setProductName] = useState("");
+  const [productSku, setProductSku] = useState("");
+  const [productType, setProductType] = useState("");
+  const [brand, setBrand] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
+  const [variants, setVariants] = useState([{ option: "", values: [""] }]);
+  const [mrp, setMrp] = useState("");
+  const [sellingPrice, setSellingPrice] = useState("");
+  const [costPrice, setCostPrice] = useState("");
+  const [stock, setStock] = useState("");
+  const [warehouse, setWarehouse] = useState("");
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [mainImages, setMainImages] = useState<File[]>([]);
+  const [galleryImages, setGalleryImages] = useState<File[]>([]);
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [tags, setTags] = useState("");
+  const [visible, setVisible] = useState(true);
+  const [featured, setFeatured] = useState(false);
+  const [countryOfOrigin, setCountryOfOrigin] = useState("");
+  const [variantCombinations, setVariantCombinations] = useState<VariantCombination[]>([]);
+
+
+    const generateVariantCombinations = () => {
     if (variants.length === 0 || variants.some(v => !v.option || v.values.some(val => !val))) {
       setVariantCombinations([]);
       return;
@@ -125,19 +264,35 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
     setVariantCombinations(combinations);
   };
 
-  const addVariantOption = () => {
-    setVariants([...variants, { option: "", values: [""] }]);
-  };
-
-  const addVariantValue = (index: number) => {
+    const addVariantValue = (index: number) => {
     const newVariants = [...variants];
     newVariants[index].values.push("");
     setVariants(newVariants);
   };
 
+   const addVariantOption = () => {
+    setVariants([...variants, { option: "", values: [""] }]);
+  };
+
   const removeVariantOption = (index: number) => {
     setVariants(variants.filter((_, i) => i !== index));
   };
+
+   const [brands, setBrands] = useState([
+    { name: "Apple", value: "apple" },
+    { name: "Samsung", value: "samsung" },
+    { name: "OnePlus", value: "oneplus" }
+  ]);
+  const [categories, setCategories] = useState([
+    { name: "Electronics", value: "electronics" },
+    { name: "Accessories", value: "accessories" },
+    { name: "Clothing", value: "clothing" }
+  ]);
+  const [countries, setCountries] = useState([
+    { name: "India", value: "india" },
+    { name: "China", value: "china" },
+    { name: "USA", value: "usa" }
+  ]);
 
   const removeVariantValue = (optionIndex: number, valueIndex: number) => {
     const newVariants = [...variants];
@@ -168,169 +323,144 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
     setCountries([...countries, newCountry]);
   };
 
-  const handleSaveAsDraft = () => {
-    console.log("Saving as draft...");
-    // Implement save as draft functionality
-  };
-
-  const handleSaveAndPublish = () => {
-    console.log("Saving and publishing...");
-    // Implement save and publish functionality
-  };
-
-  const tabs = [
-    { id: "basic", label: "Basic Info", icon: Info },
-    { id: "variants", label: "Variants", icon: Palette },
-    { id: "pricing", label: "Pricing & Tax", icon: IndianRupee },
-    { id: "inventory", label: "Inventory", icon: Warehouse },
-    { id: "channels", label: "Channels", icon: Share2 },
-    { id: "media", label: "Media", icon: Camera },
-    { id: "seo", label: "SEO & Tags", icon: Search },
-    { id: "visibility", label: "Visibility", icon: Eye },
-    { id: "additional", label: "Additional", icon: Settings },
-  ];
-
-  return (
-    <div className="w-full max-w-6xl mx-auto">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-9 mb-6">
-          {tabs.map((tab) => (
-            <TabsTrigger 
-              key={tab.id} 
-              value={tab.id}
-              className="flex flex-col items-center gap-1 p-2 text-xs"
-            >
-              <tab.icon className="h-4 w-4" />
-              <span className="hidden sm:block">{tab.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {/* Basic Info Tab */}
-        <TabsContent value="basic" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5" />
-                Basic Information
-              </CardTitle>
-              <CardDescription>Enter the basic details of your product</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="productName">Product Name *</Label>
-                  <Input id="productName" placeholder="Enter product name" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="productSku">Product SKU</Label>
-                  <Input id="productSku" placeholder="Auto-generated or manual" />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="productType">Product Type *</Label>
-                  <Select value={productType} onValueChange={setProductType}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="simple">Simple Product</SelectItem>
-                      <SelectItem value="variant">Variant Product</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="brand">Brand</Label>
-                  <div className="flex gap-2">
-                    <Select>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select brand" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {brands.map((brand) => (
-                          <SelectItem key={brand.value} value={brand.value}>{brand.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => setShowAddBrand(true)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
+   const renderStep = (stepName) => {
+    switch (stepName) {
+      case "basic":
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="categories">Categories *</Label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {selectedCategories.map((category, index) => (
-                    <Badge key={index} variant="secondary" className="gap-2">
-                      {category}
-                      <button onClick={() => setSelectedCategories(selectedCategories.filter(c => c !== category))}>
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
+                <label htmlFor="productName">Product Name *</label>
+                <input
+                  id="productName"
+                  placeholder="Enter product name"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['productName'] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors['productName'] && <p className="text-sm text-red-500">{errors['productName']}</p>}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="productSku">Product SKU</label>
+                <input
+                  id="productSku"
+                  placeholder="Auto-generated or manual"
+                  value={productSku}
+                  onChange={(e) => setProductSku(e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['productSku'] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="productType">Product Type *</label>
+                <select
+                  id="productType"
+                  value={productType}
+                  onChange={(e) => setProductType(e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['productType'] ? 'border-red-500' : 'border-gray-300'}`}
+                >
+                  <option value="">Select a product type</option>
+                  <option value="simple">Simple Product</option>
+                  <option value="variant">Variant Product</option>
+                </select>
+                {errors['productType'] && <p className="text-sm text-red-500">{errors['productType']}</p>}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="brand">Brand</label>
                 <div className="flex gap-2">
-                  <Select onValueChange={(value) => setSelectedCategories([...selectedCategories, value])}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.value} value={category.name}>{category.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    variant="outline" 
-                    size="icon"
-                    onClick={() => setShowAddCategory(true)}
+                  <select
+                    id="brand"
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                    className="input flex-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
                   >
-                    <Plus className="h-4 w-4" />
+                    {brands.map((b) => (
+                      <option key={b.value} value={b.value}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowAddBrand(true)}
+                  >
+                    +
                   </Button>
                 </div>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea id="description" placeholder="Long product description" rows={4} />
+            <div className="space-y-2">
+              <label htmlFor="categories">Categories *</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {/* Dynamic badges for selected categories */}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="shortDescription">Short Description</Label>
-                <Textarea id="shortDescription" placeholder="For channel listings like Amazon" rows={2} />
+              <div className="flex gap-2">
+                <select
+                  id="categories"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="input flex-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowAddCategory(true)}
+                >
+                  +
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
 
-        {/* Variants Tab */}
-        <TabsContent value="variants" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Palette className="h-5 w-5" />
-                Product Variants
-              </CardTitle>
-              <CardDescription>Configure product variants like size, color, etc.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {productType === "variant" ? (
+            <div className="space-y-2">
+              <label htmlFor="description">Description</label>
+              <textarea
+                id="description"
+                placeholder="Long product description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="shortDescription">Short Description</label>
+              <textarea
+                id="shortDescription"
+                placeholder="For channel listings like Amazon"
+                value={shortDescription}
+                onChange={(e) => setShortDescription(e.target.value)}
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        );
+      case "variants":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold mb-4">Product Variants</h2>
+            <p className="text-sm text-gray-500">Configure product variants like size, color, etc.</p>
+            <div>
+               {productType === "variant" ? (
                 <div className="space-y-6">
                   {/* Variant Options Setup */}
                   <div className="space-y-4">
                     <h4 className="font-medium">Variant Options</h4>
                     {variants.map((variant, optionIndex) => (
-                      <Card key={optionIndex} className="p-4">
+                      <div key={optionIndex} className="p-4">
                         <div className="flex items-center justify-between mb-3">
-                          <Label>Variant Option {optionIndex + 1}</Label>
+                          <label>Variant Option {optionIndex + 1}</label>
                           <Button
                             variant="outline"
                             size="sm"
@@ -353,7 +483,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
                           />
                           
                           <div className="space-y-2">
-                            <Label>Values</Label>
+                            <label>Values</label>
                             {variant.values.map((value, valueIndex) => (
                               <div key={valueIndex} className="flex gap-2">
                                 <Input
@@ -386,7 +516,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
                             </Button>
                           </div>
                         </div>
-                      </Card>
+                      </div>
                     ))}
                     
                     <Button onClick={addVariantOption} variant="outline" className="w-full">
@@ -404,7 +534,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
                     <div className="space-y-4">
                       <h4 className="font-medium">Variant Combinations & Pricing</h4>
                       {variantCombinations.map((combo) => (
-                        <Card key={combo.id} className="p-4">
+                        <div key={combo.id} className="p-4">
                           <div className="space-y-3">
                             <div className="flex flex-wrap gap-2">
                               {Object.entries(combo.attributes).map(([key, value]) => (
@@ -416,7 +546,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
                             
                             <div className="grid grid-cols-4 gap-3">
                               <div className="space-y-1">
-                                <Label className="text-xs">MRP *</Label>
+                                <label className="text-xs">MRP *</label>
                                 <Input
                                   type="number"
                                   placeholder="0.00"
@@ -425,7 +555,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs">Selling Price *</Label>
+                                <label className="text-xs">Selling Price *</label>
                                 <Input
                                   type="number"
                                   placeholder="0.00"
@@ -434,7 +564,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs">Cost Price</Label>
+                                <label className="text-xs">Cost Price</label>
                                 <Input
                                   type="number"
                                   placeholder="0.00"
@@ -443,7 +573,7 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
                                 />
                               </div>
                               <div className="space-y-1">
-                                <Label className="text-xs">Stock</Label>
+                                <label className="text-xs">Stock</label>
                                 <Input
                                   type="number"
                                   placeholder="0"
@@ -454,14 +584,14 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
                             </div>
                             
                             <div className="space-y-2">
-                              <Label className="text-xs">Variant Image</Label>
+                              <label className="text-xs">Variant Image</label>
                               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors cursor-pointer">
                                 <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
                                 <p className="mt-1 text-xs text-gray-600">Upload variant image</p>
                               </div>
                             </div>
                           </div>
-                        </Card>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -473,531 +603,782 @@ const AddItemForm: React.FC<AddItemFormProps> = ({ onClose }) => {
                   <p className="text-sm">Change Product Type to "Variant Product" to add variants</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Pricing & Tax Tab */}
-        <TabsContent value="pricing" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <IndianRupee className="h-5 w-5" />
-                Pricing & Tax Information
-              </CardTitle>
-              <CardDescription>Set pricing and tax details for your product</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {productType === "simple" && (
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="mrp">MRP *</Label>
-                    <Input id="mrp" type="number" placeholder="0.00" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sellingPrice">Selling Price *</Label>
-                    <Input id="sellingPrice" type="number" placeholder="0.00" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="costPrice">Cost Price</Label>
-                    <Input id="costPrice" type="number" placeholder="0.00" />
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="taxClass">Tax Class</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select tax rate" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5% GST</SelectItem>
-                      <SelectItem value="12">12% GST</SelectItem>
-                      <SelectItem value="18">18% GST</SelectItem>
-                      <SelectItem value="28">28% GST</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="hsnCode">HSN Code</Label>
-                  <Input id="hsnCode" placeholder="Enter HSN code" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gstType">GST Type</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select GST type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="inclusive">Inclusive</SelectItem>
-                      <SelectItem value="exclusive">Exclusive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            </div>
+          </div>
+        );
+      case "pricing":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold mb-4">Pricing & Tax</h2>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="space-y-2">
+                <label htmlFor="mrp">MRP *</label>
+                <input
+                  id="mrp"
+                  type="number"
+                  placeholder="0.00"
+                  value={mrp}
+                  onChange={(e) => setMrp(e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['mrp'] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors['mrp'] && <p className="text-sm text-red-500">{errors['mrp']}</p>}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <div className="space-y-2">
+                <label htmlFor="sellingPrice">Selling Price *</label>
+                <input
+                  id="sellingPrice"
+                  type="number"
+                  placeholder="0.00"
+                  value={sellingPrice}
+                  onChange={(e) => setSellingPrice(e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['sellingPrice'] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors['sellingPrice'] && <p className="text-sm text-red-500">{errors['sellingPrice']}</p>}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="costPrice">Cost Price</label>
+                <input
+                  id="costPrice"
+                  type="number"
+                  placeholder="0.00"
+                  value={costPrice}
+                  onChange={(e) => setCostPrice(e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['costPrice'] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+              </div>
+            </div>
 
-        {/* Inventory Tab - Modified for variant products */}
-        <TabsContent value="inventory" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Warehouse className="h-5 w-5" />
-                Inventory & Warehousing
-              </CardTitle>
-              <CardDescription>Manage stock quantities and warehouse details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {productType === "simple" && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="stockQuantity">Stock Quantity *</Label>
-                    <Input id="stockQuantity" type="number" placeholder="0" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reorderPoint">Reorder Point</Label>
-                    <Input id="reorderPoint" type="number" placeholder="10" />
-                  </div>
-                </div>
-              )}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="taxClass">Tax Class</label>
+                <select
+                  id="taxClass"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['taxClass'] ? 'border-red-500' : 'border-gray-300'}`}
+                >
+                  <option value="5">5% GST</option>
+                  <option value="12">12% GST</option>
+                  <option value="18">18% GST</option>
+                  <option value="28">28% GST</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="hsnCode">HSN Code</label>
+                <input
+                  id="hsnCode"
+                  placeholder="Enter HSN code"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="gstType">GST Type</label>
+                <select
+                  id="gstType"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['gstType'] ? 'border-red-500' : 'border-gray-300'}`}
+                >
+                  <option value="inclusive">Inclusive</option>
+                  <option value="exclusive">Exclusive</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        );
+      case "inventory":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold mb-4">Inventory</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="stockQuantity">Stock Quantity *</label>
+                <input
+                  id="stockQuantity"
+                  type="number"
+                  placeholder="0"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['stockQuantity'] ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors['stockQuantity'] && <p className="text-sm text-red-500">{errors['stockQuantity']}</p>}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="reorderPoint">Reorder Point</label>
+                <input
+                  id="reorderPoint"
+                  type="number"
+                  placeholder="10"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="warehouse">Warehouse Location</label>
+                <select
+                  id="warehouse"
+                  value={warehouse}
+                  onChange={(e) => setWarehouse(e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['warehouse'] ? 'border-red-500' : 'border-gray-300'}`}
+                >
+                  <option value="main">Main Warehouse</option>
+                  <option value="store1">Retail Store 1</option>
+                  <option value="store2">Retail Store 2</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="incomingStock">Incoming Stock</label>
+                <input
+                  id="incomingStock"
+                  type="number"
+                  placeholder="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="batchNumber">Batch Number</label>
+                <input
+                  id="batchNumber"
+                  placeholder="Optional"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="expiryDate">Expiry Date</label>
+                <input
+                  id="expiryDate"
+                  type="date"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                Stock quantities are managed at the variant level. Configure stock for each variant in the Variants step.
+              </p>
+            </div>
+          </div>
+        );
+      case "channels":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold mb-4">Channels & Listings</h2>
+            <div className="space-y-2">
+              <label>Select Channel</label>
+              <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="website">Own Website</option>
+                <option value="amazon">Amazon</option>
+                <option value="flipkart">Flipkart</option>
+                <option value="meesho">Meesho</option>
+                <option value="myntra">Myntra</option>
+              </select>
+            </div>
+
+            <div className="space-y-4 p-4 border rounded-lg">
+              <h4 className="font-medium">Website Configuration</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="warehouse">Warehouse Location</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select warehouse" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="main">Main Warehouse</SelectItem>
-                      <SelectItem value="store1">Retail Store 1</SelectItem>
-                      <SelectItem value="store2">Retail Store 2</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="incomingStock">Incoming Stock</Label>
-                  <Input id="incomingStock" type="number" placeholder="0" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="batchNumber">Batch Number</Label>
-                  <Input id="batchNumber" placeholder="Optional" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expiryDate">Expiry Date</Label>
-                  <Input id="expiryDate" type="date" />
-                </div>
-              </div>
-
-              {productType === "variant" && (
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    Stock quantities are managed at the variant level. Configure stock for each variant in the Variants tab.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Channels Tab - Updated with channel-specific forms */}
-        <TabsContent value="channels" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Share2 className="h-5 w-5" />
-                Channels & Listings
-              </CardTitle>
-              <CardDescription>Configure where and how your product will be listed</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Select Channel</Label>
-                <Select value={selectedChannel} onValueChange={setSelectedChannel}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="website">Own Website</SelectItem>
-                    <SelectItem value="amazon">Amazon</SelectItem>
-                    <SelectItem value="flipkart">Flipkart</SelectItem>
-                    <SelectItem value="meesho">Meesho</SelectItem>
-                    <SelectItem value="myntra">Myntra</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedChannel === "website" ? (
-                <div className="space-y-4 p-4 border rounded-lg">
-                  <h4 className="font-medium">Website Configuration</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="websiteTitle">Website Title</Label>
-                      <Input id="websiteTitle" placeholder="Product title for website" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="websiteSku">Website SKU</Label>
-                      <Input id="websiteSku" placeholder="SKU for website" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="websiteShortDesc">Short Description</Label>
-                    <Textarea id="websiteShortDesc" placeholder="Short description for website" rows={2} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="websiteDesc">Description</Label>
-                    <Textarea id="websiteDesc" placeholder="Detailed description for website" rows={4} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="websiteSpecs">Specifications</Label>
-                    <Textarea id="websiteSpecs" placeholder="Product specifications" rows={3} />
-                  </div>
-                </div>
-              ) : (
-                <div className="p-8 text-center border rounded-lg bg-gray-50">
-                  <div className="text-gray-500">
-                    <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <h4 className="font-medium mb-2">Coming Soon</h4>
-                    <p className="text-sm">Integration with {selectedChannel} is coming soon!</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Media Tab - No changes */}
-        <TabsContent value="media" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Camera className="h-5 w-5" />
-                Media Upload
-              </CardTitle>
-              <CardDescription>Upload images and videos for your product</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Main Product Images *</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer">
-                  <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-600">
-                    Drop your images here or click to browse
-                  </p>
-                  <p className="text-xs text-gray-500">JPG, PNG, WebP up to 10MB</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Gallery Images</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer">
-                  <Upload className="mx-auto h-8 w-8 text-gray-400" />
-                  <p className="mt-1 text-sm text-gray-600">Additional product images</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="productVideo">Product Video (Optional)</Label>
-                <Input id="productVideo" placeholder="Video URL or upload" />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* SEO Tab - No changes */}
-        <TabsContent value="seo" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Search className="h-5 w-5" />
-                SEO & Tags
-              </CardTitle>
-              <CardDescription>Optimize your product for search engines</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="metaTitle">Meta Title</Label>
-                <Input id="metaTitle" placeholder="SEO-friendly title" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="metaDescription">Meta Description</Label>
-                <Textarea id="metaDescription" placeholder="SEO description for search results" rows={3} />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="searchTags">Search Tags / Keywords</Label>
-                <Input id="searchTags" placeholder="Comma-separated tags for better searchability" />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Visibility Tab - No changes */}
-        <TabsContent value="visibility" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Visibility Settings
-              </CardTitle>
-              <CardDescription>Control where your product appears online</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="onlineStore">Online Store Visibility</Label>
-                    <p className="text-sm text-gray-500">Show product on your website</p>
-                  </div>
-                  <Switch id="onlineStore" defaultChecked />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="amazonVisible">Amazon Marketplace</Label>
-                    <p className="text-sm text-gray-500">List on Amazon</p>
-                  </div>
-                  <Switch id="amazonVisible" />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="flipkartVisible">Flipkart Marketplace</Label>
-                    <p className="text-sm text-gray-500">List on Flipkart</p>
-                  </div>
-                  <Switch id="flipkartVisible" />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="meeshoVisible">Meesho Marketplace</Label>
-                    <p className="text-sm text-gray-500">List on Meesho</p>
-                  </div>
-                  <Switch id="meeshoVisible" />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="myntraVisible">Myntra Marketplace</Label>
-                    <p className="text-sm text-gray-500">List on Myntra</p>
-                  </div>
-                  <Switch id="myntraVisible" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Additional Settings Tab - Updated with new return conditions */}
-        <TabsContent value="additional" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Additional Settings
-              </CardTitle>
-              <CardDescription>Configure additional product properties</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="countryOrigin">Country of Origin *</Label>
-                  <div className="flex gap-2">
-                    <Select>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {countries.map((country) => (
-                          <SelectItem key={country.value} value={country.value}>{country.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => setShowAddCountry(true)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="weight">Weight (grams) *</Label>
-                  <Input id="weight" type="number" placeholder="0" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="length">Length (cm)</Label>
-                  <Input id="length" type="number" placeholder="0" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="width">Width (cm)</Label>
-                  <Input id="width" type="number" placeholder="0" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="height">Height (cm)</Label>
-                  <Input id="height" type="number" placeholder="0" />
-                </div>
-              </div>
-
-              {/* Enhanced Return Settings */}
-              <div className="space-y-4 p-4 border rounded-lg">
-                <h4 className="font-medium">Return Settings</h4>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="returnable">Returnable</Label>
-                    <p className="text-sm text-gray-500">Allow returns for this product</p>
-                  </div>
-                  <Switch 
-                    id="returnable" 
-                    checked={returnSettings.isReturnable}
-                    onCheckedChange={(checked) => setReturnSettings(prev => ({ ...prev, isReturnable: checked }))}
+                  <label htmlFor="websiteTitle">Website Title</label>
+                  <input
+                    id="websiteTitle"
+                    placeholder="Product title for website"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-
-                {returnSettings.isReturnable && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="returnWindow">Return Window (Days)</Label>
-                        <Select 
-                          value={returnSettings.returnWindowDays} 
-                          onValueChange={(value) => setReturnSettings(prev => ({ ...prev, returnWindowDays: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="7">7 Days</SelectItem>
-                            <SelectItem value="10">10 Days</SelectItem>
-                            <SelectItem value="15">15 Days</SelectItem>
-                            <SelectItem value="30">30 Days</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="returnType">Return Type</Label>
-                        <Select 
-                          value={returnSettings.returnType} 
-                          onValueChange={(value) => setReturnSettings(prev => ({ ...prev, returnType: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="refund">Refund Only</SelectItem>
-                            <SelectItem value="replacement">Replacement Only</SelectItem>
-                            <SelectItem value="refund_or_replacement">Refund or Replacement</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="returnConditions">Return Conditions</Label>
-                      <Textarea 
-                        id="returnConditions" 
-                        placeholder="e.g., Only unused and unopened items accepted"
-                        value={returnSettings.returnConditions}
-                        onChange={(e) => setReturnSettings(prev => ({ ...prev, returnConditions: e.target.value }))}
-                        rows={2}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="returnShipping">Return Shipping Borne By</Label>
-                      <Select 
-                        value={returnSettings.returnShippingBorneBy} 
-                        onValueChange={(value) => setReturnSettings(prev => ({ ...prev, returnShippingBorneBy: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="customer">Customer</SelectItem>
-                          <SelectItem value="seller">Seller</SelectItem>
-                          <SelectItem value="platform">Platform</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
-                )}
-
-                {!returnSettings.isReturnable && (
-                  <div className="space-y-2">
-                    <Label htmlFor="nonReturnableReason">Reason for Non-Returnable</Label>
-                    <Textarea 
-                      id="nonReturnableReason" 
-                      placeholder="e.g., Hygiene reasons, perishable item"
-                      value={returnSettings.nonReturnableReason}
-                      onChange={(e) => setReturnSettings(prev => ({ ...prev, nonReturnableReason: e.target.value }))}
-                      rows={2}
-                    />
+                <div className="space-y-2">
+                  <label htmlFor="websiteSku">Website SKU</label>
+                  <input
+                    id="websiteSku"
+                    placeholder="SKU for website"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="websiteShortDesc">Short Description</label>
+                <textarea
+                  id="websiteShortDesc"
+                  placeholder="Short description for website"
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="websiteDesc">Description</label>
+                <textarea
+                  id="websiteDesc"
+                  placeholder="Detailed description for website"
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="websiteSpecs">Specifications</label>
+                <textarea
+                  id="websiteSpecs"
+                  placeholder="Product specifications"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      case "media":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold mb-4">Media Upload</h2>
+            <div className="space-y-2">
+              <label>Main Product Images *</label>
+              <div
+              onDrop={e => {
+                e.preventDefault();
+                const files = Array.from(e.dataTransfer.files).filter(
+                file => file.type.startsWith("image/")
+                );
+                if (files.length > 0) {
+                setMainImages(prev => [...prev, ...files]);
+                }
+              }}
+              onDragOver={e => e.preventDefault()}
+              >
+              <label
+                htmlFor="mainImages"
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer block"
+                style={{ cursor: "pointer" }}
+              >
+                <Camera className="mx-auto h-12 w-12 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-600">
+                Drop your images here or click to browse
+                </p>
+                <p className="text-xs text-gray-500">JPG, PNG, WebP up to 10MB</p>
+                <input
+                id="mainImages"
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: "none" }}
+                onChange={e => {
+                  const files = Array.from(e.target.files || []);
+                  setMainImages(prev => [...prev, ...files]);
+                }}
+                />
+              </label>
+              {mainImages.length > 0 && (
+                <div className="flex flex-wrap gap-4 mt-4">
+                {mainImages.map((file: any, idx: number) => (
+                  <div key={idx} className="relative w-24 h-24">
+                  <img
+                    src={typeof file === "string" ? file : URL.createObjectURL(file)}
+                    alt={`preview-${idx}`}
+                    className="object-cover w-full h-full rounded"
+                  />
+                  <button
+                    type="button"
+                    className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
+                    onClick={() =>
+                    setMainImages(prev =>
+                      prev.filter((_: any, i: number) => i !== idx)
+                    )
+                    }
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
                   </div>
-                )}
+                ))}
+                </div>
+              )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label>Gallery Images</label>
+              <div
+              onDrop={e => {
+                e.preventDefault();
+                const files = Array.from(e.dataTransfer.files).filter(
+                file => file.type.startsWith("image/")
+                );
+                if (files.length > 0) {
+                setGalleryImages(prev => [...prev, ...files]);
+                }
+              }}
+              onDragOver={e => e.preventDefault()}
+              >
+              <label
+                htmlFor="galleryImages"
+                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer block"
+                style={{ cursor: "pointer" }}
+              >
+                <Camera className="mx-auto h-8 w-8 text-gray-400" />
+                <p className="mt-1 text-sm text-gray-600">Drop your images here or click to browse</p>
+                <p className="text-xs text-gray-500">JPG, PNG, WebP up to 10MB</p>
+                <input
+                id="galleryImages"
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: "none" }}
+                onChange={e => {
+                  const files = Array.from(e.target.files || []);
+                  setGalleryImages(prev => [...prev, ...files]);
+                }}
+                />
+              </label>
+              {galleryImages.length > 0 && (
+                <div className="flex flex-wrap gap-4 mt-4">
+                {galleryImages.map((file: any, idx: number) => (
+                  <div key={idx} className="relative w-20 h-20">
+                  <img
+                    src={typeof file === "string" ? file : URL.createObjectURL(file)}
+                    alt={`gallery-preview-${idx}`}
+                    className="object-cover w-full h-full rounded"
+                  />
+                  <button
+                    type="button"
+                    className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
+                    onClick={() =>
+                    setGalleryImages(prev =>
+                      prev.filter((_: any, i: number) => i !== idx)
+                    )
+                    }
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
+                  </div>
+                ))}
+                </div>
+              )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="productVideo">Product Video (Optional)</label>
+              <input
+                id="productVideo"
+                placeholder="Video URL or upload"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        );
+      case "seo":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold mb-4">SEO & Tags</h2>
+            <div className="space-y-2">
+              <label htmlFor="metaTitle">Meta Title</label>
+              <input
+                id="metaTitle"
+                placeholder="SEO-friendly title"
+                value={metaTitle}
+                onChange={(e) => setMetaTitle(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="metaDescription">Meta Description</label>
+              <textarea
+                id="metaDescription"
+                placeholder="SEO description for search results"
+                value={metaDescription}
+                onChange={(e) => setMetaDescription(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="searchTags">Search Tags / Keywords</label>
+              <input
+                id="searchTags"
+                placeholder="Comma-separated tags for better searchability"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        );
+      case "visibility":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold mb-4">Visibility Settings</h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label htmlFor="onlineStore">Online Store Visibility</label>
+                  <p className="text-sm text-gray-500">Show product on your website</p>
+                </div>
+                <input type="checkbox" id="onlineStore" defaultChecked />
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="codAvailable">COD Available</Label>
-                  <p className="text-sm text-gray-500">Cash on delivery</p>
+                  <label htmlFor="amazonVisible">Amazon Marketplace</label>
+                  <p className="text-sm text-gray-500">List on Amazon</p>
                 </div>
-                <Switch id="codAvailable" defaultChecked />
+                <input type="checkbox" id="amazonVisible" />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <label htmlFor="flipkartVisible">Flipkart Marketplace</label>
+                  <p className="text-sm text-gray-500">List on Flipkart</p>
+                </div>
+                <input type="checkbox" id="flipkartVisible" />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <label htmlFor="meeshoVisible">Meesho Marketplace</label>
+                  <p className="text-sm text-gray-500">List on Meesho</p>
+                </div>
+                <input type="checkbox" id="meeshoVisible" />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <label htmlFor="myntraVisible">Myntra Marketplace</label>
+                  <p className="text-sm text-gray-500">List on Myntra</p>
+                </div>
+                <input type="checkbox" id="myntraVisible" />
+              </div>
+            </div>
+          </div>
+        );
+      case "additional":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold mb-4">Additional Settings</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="countryOrigin">Country of Origin *</label>
+                <select
+                  id="countryOrigin"
+                  value={countryOfOrigin}
+                  onChange={(e) => setCountryOfOrigin(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {countries.map((country) => (
+                    <option key={country.value} value={country.value}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="weight">Weight (grams) *</label>
+                <input
+                  id="weight"
+                  type="number"
+                  placeholder="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="length">Length (cm)</label>
+                <input
+                  id="length"
+                  type="number"
+                  placeholder="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="width">Width (cm)</label>
+                <input
+                  id="width"
+                  type="number"
+                  placeholder="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="height">Height (cm)</label>
+                <input
+                  id="height"
+                  type="number"
+                  placeholder="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 p-4 border rounded-lg">
+              <h4 className="font-medium">Return Settings</h4>
+              <div className="flex items-center justify-between">
+                <div>
+                  <label htmlFor="returnable">Returnable</label>
+                  <p className="text-sm text-gray-500">Allow returns for this product</p>
+                </div>
+                 <Switch 
+                    id="returnable" 
+                    checked={returnSettings.isReturnable}
+                    onCheckedChange={(checked) => setReturnSettings(prev => ({ ...prev, isReturnable: checked }))}
+                  />
+              </div>
+              
+               {returnSettings.isReturnable && (
+                <><div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="returnWindow">Return Window (Days)</label>
+                  <select
+                    id="returnWindow"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="7">7 Days</option>
+                    <option value="10">10 Days</option>
+                    <option value="15">15 Days</option>
+                    <option value="30">30 Days</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="returnType">Return Type</label>
+                  <select
+                    id="returnType"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="refund">Refund Only</option>
+                    <option value="replacement">Replacement Only</option>
+                    <option value="refund_or_replacement">Refund or Replacement</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="returnConditions">Return Conditions</label>
+                <textarea
+                  id="returnConditions"
+                  placeholder="e.g., Only unused and unopened items accepted"
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="warrantyInfo">Warranty Information</Label>
-                <Textarea id="warrantyInfo" placeholder="Warranty details" rows={2} />
+                <label htmlFor="returnShipping">Return Shipping Borne By</label>
+                <select
+                  id="returnShipping"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="customer">Customer</option>
+                  <option value="seller">Seller</option>
+                  <option value="platform">Platform</option>
+                </select>
               </div>
+              </>)}
+              {!returnSettings.isReturnable && (
+                <div className="space-y-2">
+                  <label htmlFor="nonReturnableReason">Reason for Non-Returnable</label>
+                  <textarea
+                    id="nonReturnableReason"
+                    placeholder="e.g., Hygiene reasons, perishable item"
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="customAttributes">Custom Attributes</Label>
-                <Input id="customAttributes" placeholder="e.g., Fabric Type: Cotton, Season: Summer" />
+            <div className="flex items-center justify-between">
+              <div>
+                <label htmlFor="codAvailable">COD Available</label>
+                <p className="text-sm text-gray-500">Cash on delivery</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <input type="checkbox" id="codAvailable" defaultChecked />
+            </div>
 
-      {/* Action Buttons - Made functional */}
-      <div className="flex justify-end gap-3 pt-6 border-t">
-        <Button variant="outline" onClick={onClose}>
-          Cancel
+            <div className="space-y-2">
+              <label htmlFor="warrantyInfo">Warranty Information</label>
+              <textarea
+                id="warrantyInfo"
+                placeholder="Warranty details"
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="customAttributes">Custom Attributes</label>
+              <input
+                id="customAttributes"
+                placeholder="e.g., Fabric Type: Cotton, Season: Summer"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const steps = [
+  { id: "basic", label: "Basic Information", icon: Info, content: renderStep('basic') },
+  { id: "variants", label: "Variance", icon: Palette, content: renderStep('variants') },
+  { id: "pricing", label: "Pricing and Taxing", icon: IndianRupee, content: renderStep('pricing') },
+  { id: "inventory", label: "Warehousing", icon: Warehouse, content: renderStep('inventory') },
+  { id: "channels", label: "Listing", icon: Share2, content: renderStep('channels') },
+  { id: "media", label: "Media", icon: Camera, content: renderStep('media') },
+  { id: "seo", label: "SEO", icon: Search, content: renderStep('seo') },
+  { id: "additional", label: "Additional Settings", icon: Settings, content: renderStep('additional') },
+];
+
+  const handleNext = () => {
+    const currentStepId = steps[currentStep].id;
+    const requiredFields = {
+      basic: ["productName", "productType"],
+      pricing: ["mrp", "sellingPrice"],
+      inventory: ["stockQuantity"],
+      additional: ["countryOrigin"],
+    };
+
+    const fields = requiredFields[currentStepId];
+    if (fields) {
+      const newErrors = {};
+      for (const id of fields) {
+        const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+        if (!el || !el.value) {
+          newErrors[id] = `This field is required.`;
+        }
+      }
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        const firstErrorField = Object.keys(newErrors)[0];
+        const el = document.getElementById(firstErrorField);
+        el?.focus();
+        return;
+      }
+    }
+    setErrors({});
+    saveStepToStore();
+
+    if (currentStep < steps.length - 1) setCurrentStep((prev) => prev + 1);
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) setCurrentStep((prev) => prev - 1);
+  };
+
+  const handleSaveAsDraft = () => alert("Save as draft");
+  const handleSaveAndPublish = () => alert("Save and Publish clicked");
+  
+
+  const renderStepperNavigation = () => {
+    return (
+      <div className="flex justify-between pt-6 border-t mt-6">
+        <Button
+          variant={currentStep === 0 ? "outline" : "destructive"}
+          onClick={handleBack}
+          disabled={currentStep === 0}
+          className={`px-4 py-2 rounded ${currentStep === 0 ? 'bg-gray-300 text-gray-700 disabled:opacity-50' : ''}`}
+        >
+          Back
         </Button>
-        <Button variant="outline" onClick={handleSaveAsDraft}>
-          Save as Draft
-        </Button>
-        <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveAndPublish}>
-          Save & Publish
-        </Button>
+         <div className="flex gap-4">
+          <Button
+            onClick={handleSaveAsDraft}
+            className="px-4 py-2 bg-brand-blue text-white rounded"
+          >
+            Save as Draft
+          </Button>
+          <Button
+            onClick={currentStep === steps.length - 1 ? handleSaveAndPublish : handleNext}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700"
+          >
+           { currentStep === steps.length - 1 ? 'Save & Publish' : 'Save & Next'}
+          </Button>
+        </div>
       </div>
+    );
+  }
+  
 
-      {/* Modal Forms */}
-      <AddBrandForm 
-        isOpen={showAddBrand} 
-        onClose={() => setShowAddBrand(false)} 
+  // Handler to collect all data and dispatch to store/api
+  const saveStepToStore = () => {
+    const payload = {
+      productName,
+      productSku,
+      productType,
+      brand,
+      category,
+      description,
+      shortDescription,
+      variants,
+      mrp,
+      sellingPrice,
+      costPrice,
+      stock,
+      warehouse,
+      channels,
+      mainImages,
+      galleryImages,
+      metaTitle,
+      metaDescription,
+      tags,
+      visible,
+      featured,
+      countryOfOrigin,
+    };
+    dispatch(addProductRequest(payload));
+  };
+
+  // Call saveStepToStore on every step change
+  const handleStepChange = (nextStep) => {
+    saveStepToStore();
+    setCurrentStep(nextStep);
+  };
+
+  return (
+    <div className="w-full max-w-6xl mx-auto">
+      {/* Stepper Component Integration */}
+      <Stepper steps={steps} 
+        handleNext={handleNext}
+        handleBack={handleBack} 
+        activeStep={currentStep} 
+        setActiveStep={setCurrentStep} 
+        navigationSection={renderStepperNavigation()}
+      />
+
+      {/* Step Content */}
+      {/* <div>{renderStep()}</div> */}
+
+      {/* Navigation Buttons for AddItemForm */}
+      {/* <div className="flex justify-between pt-6 border-t mt-6">
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={handleSaveAsDraft}>Save as Draft</Button>
+        </div>
+        <div className="flex gap-3">
+          {currentStep > 0 && <Button variant="outline" onClick={handleBack}>Back</Button>}
+          {currentStep < steps.length - 1 ? (
+            <Button onClick={handleNext}>Next</Button>
+          ) : (
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveAndPublish}>
+              Save & Publish
+            </Button>
+          )}
+        </div>
+      </div> */}
+
+      {/* Inline form components remain */}
+      <AddBrandForm
+        isOpen={showAddBrand}
+        onClose={() => setShowAddBrand(false)}
         onSave={handleAddBrand}
       />
-      <AddCategoryForm 
-        isOpen={showAddCategory} 
-        onClose={() => setShowAddCategory(false)} 
+      <AddCategoryForm
+        isOpen={showAddCategory}
+        onClose={() => setShowAddCategory(false)}
         onSave={handleAddCategory}
       />
-      <AddCountryForm 
-        isOpen={showAddCountry} 
-        onClose={() => setShowAddCountry(false)} 
+      <AddCountryForm
+        isOpen={showAddCountry}
+        onClose={() => setShowAddCountry(false)}
         onSave={handleAddCountry}
       />
     </div>
