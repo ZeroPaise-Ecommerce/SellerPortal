@@ -1327,12 +1327,6 @@ const AddItemForm = ({ onClose }) => {
     dispatch(addProductRequest(payload));
   };
 
-  // Call saveStepToStore on every step change
-  const handleStepChange = (nextStep) => {
-    saveStepToStore();
-    setCurrentStep(nextStep);
-  };
-
   return (
     <div className="w-full max-w-6xl mx-auto">
       {/* Stepper Component Integration */}
@@ -1343,27 +1337,6 @@ const AddItemForm = ({ onClose }) => {
         setActiveStep={setCurrentStep} 
         navigationSection={renderStepperNavigation()}
       />
-
-      {/* Step Content */}
-      {/* <div>{renderStep()}</div> */}
-
-      {/* Navigation Buttons for AddItemForm */}
-      {/* <div className="flex justify-between pt-6 border-t mt-6">
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button variant="outline" onClick={handleSaveAsDraft}>Save as Draft</Button>
-        </div>
-        <div className="flex gap-3">
-          {currentStep > 0 && <Button variant="outline" onClick={handleBack}>Back</Button>}
-          {currentStep < steps.length - 1 ? (
-            <Button onClick={handleNext}>Next</Button>
-          ) : (
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveAndPublish}>
-              Save & Publish
-            </Button>
-          )}
-        </div>
-      </div> */}
 
       {/* Inline form components remain */}
       <AddBrandForm
