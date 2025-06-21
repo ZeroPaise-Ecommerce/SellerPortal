@@ -45,7 +45,7 @@ import {
   ShoppingCart,
   AlertOctagon
 } from "lucide-react";
-import AddItemForm from "./AddItemForm";
+import AddItemForm from "./AddItemForm/AddItemForm";
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
