@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Stepper from "@/components/ui/stepper";
 import useAppDispatch from "@/hooks/useAppDispatch";
-import { addBasicInfoProductRequest, addPricingProductRequest } from "@/store/Inventory/product/actions";
+import { addBasicInfoProductRequest, addMediaProductRequest, addPricingProductRequest, addWarehouseProductRequest } from "@/store/Inventory/product/actions";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useSelector } from "react-redux";
@@ -243,7 +243,7 @@ const AddItemForm = ({ onClose }) => {
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [shortDescription, setShortDescription] = useState("");
-  const [variants, setVariants] = useState([{ option: "", values: [""] }]);
+  const [variants, setVariants] = useState([{id:null, option: "", values: [""] }]);
   const [mrp, setMrp] = useState("");
   const [sellingPrice, setSellingPrice] = useState("");
   const [costPrice, setCostPrice] = useState("");
@@ -252,9 +252,14 @@ const AddItemForm = ({ onClose }) => {
   const [gstType, setGstType] = useState("inclusive");
   const [stock, setStock] = useState("");
   const [warehouse, setWarehouse] = useState("");
+  const [reorderPoint, setReorderPoint] = useState("");
+  const [incomingStock, setIncomingStock] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [batchNumber, setBatchNumber] = useState("")
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mainImages, setMainImages] = useState<File[]>([]);
   const [galleryImages, setGalleryImages] = useState<File[]>([]);
+  const [videoUploadLink, setVideoUploadLink] = useState("");
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
   const [tags, setTags] = useState("");
@@ -304,7 +309,7 @@ const AddItemForm = ({ onClose }) => {
   };
 
    const addVariantOption = () => {
-    setVariants([...variants, { option: "", values: [""] }]);
+    setVariants([...variants, { id: crypto.randomUUID, option: "", values: [""] }]);
   };
 
   const removeVariantOption = (index: number) => {
@@ -423,6 +428,14 @@ const AddItemForm = ({ onClose }) => {
             setStock={setStock}
             warehouse={warehouse}
             setWarehouse={setWarehouse}
+            reOrderPoint={reorderPoint}
+            setReOrderPoint={setReorderPoint}
+            incomingStock={incomingStock}
+            setIncomingStock={setIncomingStock}
+            batchNumber={batchNumber}
+            setBatchNumber={setBatchNumber}
+            expiryDate={expiryDate}
+            setExpiryDate={setExpiryDate}
             errors={errors}
           />
         );
@@ -435,6 +448,8 @@ const AddItemForm = ({ onClose }) => {
             setMainImages={setMainImages}
             galleryImages={galleryImages}
             setGalleryImages={setGalleryImages}
+            videoUploadLink={videoUploadLink}
+            setVideoUploadLink={setVideoUploadLink}
           />
         );
       case "seo":
@@ -584,6 +599,8 @@ const AddItemForm = ({ onClose }) => {
 
   // Handler to collect all data and dispatch to store/api
   const saveStepToStore = (currentStepId: string) => {
+    const currentDate = new Date().toISOString();
+    const currentUser = "admin"; // Replace with actual user
     switch (currentStepId) {
       case "basic":
         const basicPayload = {
@@ -597,9 +614,17 @@ const AddItemForm = ({ onClose }) => {
         };
         dispatch(addBasicInfoProductRequest(basicPayload));
         break;
-      case "variants":
+      case "variants":       
         const variantPayload = {
-          variants,
+          productId: editingProduct?.basicInfo?.productId,
+          variants: variants.map((v) => ({
+            ...v,
+            id: v.id || crypto.randomUUID(), // or generate with uuid
+            createdDate: currentDate,
+            updatedDate: currentDate,
+            createdBy: currentUser,
+            updatedBy: currentUser,
+          })),
         };
         dispatch(addBasicInfoProductRequest(variantPayload));
         break;
@@ -618,10 +643,15 @@ const AddItemForm = ({ onClose }) => {
         break;  
       case "inventory":
         const inventoryPayload = {
+          productId: editingProduct?.basicInfo?.productId,
+          variantId: "0",
+          warehouseId : 1,
           stock,
-          warehouse,
+          reorderPoint,
+          incomingStock,
+          expiryDate
         };
-        dispatch(addBasicInfoProductRequest(inventoryPayload));
+        dispatch(addWarehouseProductRequest(inventoryPayload));
         break;
       case "additional":
         const additionalPayload = {
@@ -639,10 +669,14 @@ const AddItemForm = ({ onClose }) => {
         break;  
       case "media":
         const mediaPayload = {
-          mainImages,
-          galleryImages,
+          productId: editingProduct?.basicInfo?.productId,
+          variantId: "0",
+          mainImages: mainImages.map(file => file.name),
+          galleryImages: galleryImages.map(file => file.name),
+          ChannelSpecificImages: null,
+          videoUploadLink
         };
-        dispatch(addBasicInfoProductRequest(mediaPayload));
+        dispatch(addMediaProductRequest(mediaPayload));
         break;
       case "seo":
         const seoPayload = { 

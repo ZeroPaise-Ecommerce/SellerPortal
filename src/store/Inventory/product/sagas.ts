@@ -4,7 +4,14 @@ import {
   ADD_BASIC_INFO_PRODUCT_REQUEST, addBasicInfoProductSuccess, addBasicInfoProductFailure,
   addPricingProductSuccess,
   addPricingProductFailure,
-  ADD_PRICING_PRODUCT_REQUEST
+  ADD_PRICING_PRODUCT_REQUEST,
+  addWarehouseProductRequest,
+  ADD_WAREHOUSE__PRODUCT_REQUEST,
+  addWarehouseProductSuccess,
+  addWarehouseProductFailure,
+  addMediaProductSuccess,
+  addMediaProductFailure,
+  ADD_MEDIA__PRODUCT_REQUEST
 } from './actions';
 import * as api from '../../../services/productService';
 
@@ -28,16 +35,37 @@ export function* addBasicInfo(action: any) {
 
 export function* createPricing(action: any) {
   try {
-    const response = yield call(api.CreatePricing, action.payload);
+    const response = yield call(api.CreateActions, action.payload, "amendProductPricing");
     yield put(addPricingProductSuccess(response));
   } catch (error: any) {
     yield put(addPricingProductFailure(error.message));
   }
 }
 
+export function* createWarehouse(action: any) {
+  try {
+    const response = yield call(api.CreateActions, action.payload, "amendProductBatch");
+    yield put(addWarehouseProductSuccess(response));
+  } catch (error: any) {
+    yield put(addWarehouseProductFailure(error.message));
+  }
+}
+
+export function* createMedia(action: any) {
+  try {
+    const response = yield call(api.CreateActions, action.payload, "amendMedia");
+    yield put(addMediaProductSuccess(response));
+  } catch (error: any) {
+    yield put(addMediaProductFailure(error.message));
+  }
+}
+
+
 export function* productSaga1() {
   yield takeLatest(GET_PRODUCTS_REQUEST, fetchProducts);
   yield takeLatest(ADD_BASIC_INFO_PRODUCT_REQUEST, addBasicInfo);
   yield takeLatest(ADD_PRICING_PRODUCT_REQUEST, createPricing);
+  yield takeLatest(ADD_WAREHOUSE__PRODUCT_REQUEST, createWarehouse);
+  yield takeLatest(ADD_MEDIA__PRODUCT_REQUEST, createMedia);
   yield put({ type: 'SET_STAGE_COMPLETED', payload: true });
 }

@@ -27,6 +27,8 @@
 //   operation: number;}
 // }
 
+import { UUID } from "crypto";
+
 export interface BasicInfo {
   id: string;
   productId: number;
@@ -45,15 +47,21 @@ export interface BasicInfo {
 }
 
 export interface Variant {
-  id: string;
+  id: UUID;
   variantName: string;
+  variantOption: string;
+  variantValues: string;
   variantSKU: string;
   variantType: string;
   visibilityType: string;
+  createdDate: string;
+  updatedDate: string;
+  createdBy: string;
+  updatedBy: string;
 }
 
 export interface Pricing {
-  id: string;
+  id: number;
   pricing: string;
   pricingType: string;
   taxClass: string;
@@ -63,9 +71,12 @@ export interface Pricing {
 }
 
 export interface Inventory {
-  id: string;
-  inventory: string;
-  inventoryType: string;
+  id: number;
+  warehouse: number;
+  stock: string;
+  reOrderPoint: number;
+  incomingStock: number;
+  expiryDate: string;
 }
 
 export interface Additional {
@@ -82,8 +93,12 @@ export interface Channel {
 
 export interface Media {
   id: string;
-  media: string;
-  mediaType: string;
+  productId: number;
+  variantId: number;
+  galleryImages: string[];
+  mainImages: string[];
+  channelSpecificImages: string[];
+  videoUploadLink: string;
 }
 
 export interface Seo {

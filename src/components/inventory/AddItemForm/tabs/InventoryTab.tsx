@@ -1,6 +1,7 @@
 import React from 'react';
 
-const InventoryTab = ({ stock, setStock, warehouse, setWarehouse, errors }) => {
+const InventoryTab = ({ stock, setStock, warehouse, setWarehouse, reOrderPoint, setReOrderPoint, 
+  incomingStock, setIncomingStock, batchNumber, setBatchNumber,expiryDate, setExpiryDate, errors }) => {
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold mb-4">Inventory</h2>
@@ -22,6 +23,8 @@ const InventoryTab = ({ stock, setStock, warehouse, setWarehouse, errors }) => {
           <input
             id="reorderPoint"
             type="number"
+            value={reOrderPoint}
+            onChange={(e) => setReOrderPoint(e.target.value)}
             placeholder="10"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -47,6 +50,8 @@ const InventoryTab = ({ stock, setStock, warehouse, setWarehouse, errors }) => {
           <input
             id="incomingStock"
             type="number"
+            value={incomingStock}
+            onChange={(e) => setIncomingStock(e.target.value)}
             placeholder="0"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -59,6 +64,8 @@ const InventoryTab = ({ stock, setStock, warehouse, setWarehouse, errors }) => {
           <input
             id="batchNumber"
             placeholder="Optional"
+            value={batchNumber}
+            onChange={(e) => setBatchNumber(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -67,6 +74,8 @@ const InventoryTab = ({ stock, setStock, warehouse, setWarehouse, errors }) => {
           <input
             id="expiryDate"
             type="date"
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>

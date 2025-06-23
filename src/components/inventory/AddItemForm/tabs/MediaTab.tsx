@@ -1,7 +1,7 @@
 import React from 'react';
 import { Camera, Trash2 } from 'lucide-react';
 
-const MediaTab = ({ mainImages, setMainImages, galleryImages, setGalleryImages }) => {
+const MediaTab = ({ mainImages, setMainImages, galleryImages, setGalleryImages, videoUploadLink, setVideoUploadLink }) => {
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold mb-4">Media Upload</h2>
@@ -133,6 +133,8 @@ const MediaTab = ({ mainImages, setMainImages, galleryImages, setGalleryImages }
         <label htmlFor="productVideo">Product Video (Optional)</label>
         <input
           id="productVideo"
+          value={videoUploadLink}
+          onChange={(e) => setVideoUploadLink(e.target.value)}
           placeholder="Video URL or upload"
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
