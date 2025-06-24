@@ -79,11 +79,25 @@ export interface Inventory {
   expiryDate: string;
 }
 
-export interface Additional {
-  id: string;
-  additional: string;
-  additionalType: string;
+export interface AdditionalSettings {
+  id: number;
+  productId: number;
+  variantId: number;
+  countryOrgin: string;
+  length: number;
+  width: number;
+  height: number;
+  weight: number;
+  returnable: boolean;
+  returnWindow: number; // consider using enum if applicable
+  returnType: number;   // consider using enum if applicable
+  returnConditions: string;
+  returnShipping: number; // consider using enum if applicable
+  codAvailable: boolean;
+  warrantyInfo: string;
+  customAttributes: string;
 }
+
 
 export interface Channel {
   id: string;
@@ -103,8 +117,11 @@ export interface Media {
 
 export interface Seo {
   id: string;
-  seo: string;
-  seoType: string;
+  productId: number;
+  variantId: number;
+  MetaTitle: string;
+  MetaDescription: string;
+  Keywords: string;
 }
 
 export interface Visibility {
@@ -118,7 +135,7 @@ export interface Product {
   variants?: Variant[];
   pricing?: Pricing;
   inventory?: Inventory;
-  additional?: Additional;
+  AdditionalSettings?: AdditionalSettings;
   channels?: Channel[];
   media?: Media[];
   seo?: Seo;

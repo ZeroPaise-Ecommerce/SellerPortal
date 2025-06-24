@@ -21,6 +21,14 @@ export const ADD_MEDIA__PRODUCT_REQUEST = 'ADD_MEDIA__PRODUCT_REQUEST';
 export const ADD_MEDIA_PRODUCT_SUCCESS = 'ADD_MEDIA_PRODUCT_SUCCESS';
 export const ADD_MEDIA_PRODUCT_FAILURE = 'ADD_MEDIA_PRODUCT_FAILURE';
 
+export const ADD_SEO__PRODUCT_REQUEST = 'ADD_SEO__PRODUCT_REQUEST';
+export const ADD_SEO_PRODUCT_SUCCESS = 'ADD_SEO_PRODUCT_SUCCESS';
+export const ADD_SEO_PRODUCT_FAILURE = 'ADD_SEO_PRODUCT_FAILURE';
+
+export const ADD_ADDITIONAL__PRODUCT_REQUEST = 'ADD_ADDITIONAL__PRODUCT_REQUEST';
+export const ADD_ADDITIONAL_PRODUCT_SUCCESS = 'ADD_ADDITIONAL_PRODUCT_SUCCESS';
+export const ADD_ADDITIONAL_PRODUCT_FAILURE = 'ADD_ADDITIONAL_PRODUCT_FAILURE';
+
 
 export const getProductsRequest = () => ({ type: GET_PRODUCTS_REQUEST });
 export const getProductsSuccess = (payload: any) => ({ type: GET_PRODUCTS_SUCCESS, payload });
@@ -41,3 +49,11 @@ export const addWarehouseProductFailure = (payload: string) => ({ type: ADD_WARE
 export const addMediaProductRequest = (payload: any) => ({ type: ADD_MEDIA__PRODUCT_REQUEST, payload });
 export const addMediaProductSuccess = (payload: any) => ({ type: ADD_MEDIA_PRODUCT_SUCCESS, payload });
 export const addMediaProductFailure = (payload: string) => ({ type: ADD_MEDIA_PRODUCT_FAILURE, payload });
+
+export const addSEOProductRequest = (payload: any) => ({ type: ADD_SEO__PRODUCT_REQUEST, payload });
+export const addSEOProductSuccess = (payload: any) => ({ type: ADD_SEO_PRODUCT_SUCCESS, payload });
+export const addSEOProductFailure = (payload: string) => ({ type: ADD_SEO_PRODUCT_FAILURE, payload });
+
+export const addAdditionalSEOProductRequest = (payload: any) => ({ type: ADD_ADDITIONAL__PRODUCT_REQUEST, payload });
+export const addAdditionalProductSuccess = (payload: any) => ({ type: ADD_ADDITIONAL_PRODUCT_SUCCESS, payload });
+export const addAdditionalProductFailure = (payload: string) => ({ type: ADD_ADDITIONAL_PRODUCT_FAILURE, payload });

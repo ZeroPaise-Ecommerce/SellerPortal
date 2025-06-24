@@ -5,6 +5,30 @@ const AdditionalTab = ({
   countryOfOrigin,
   setCountryOfOrigin,
   countries,
+  length,
+  setlength,
+  width,
+  setWidth,
+  height,
+  setHeight,
+  weight,
+  setWeight,
+  returnable,
+  setReturnable,
+  returnWindow,
+  setReturnWindow,
+  returnType,
+  setReturnType,
+  returnConditions,
+  setReturnConditions,
+  returnShipping,
+  setReturnShipping,
+  codAvailable,
+  setCodAvailable,
+  warrantyInfo,
+  setWarrantyInfo,
+  customAttributes,
+  setCustomAttributes,
   returnSettings,
   setReturnSettings,
 }) => {
@@ -32,6 +56,8 @@ const AdditionalTab = ({
           <input
             id="weight"
             type="number"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
             placeholder="0"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -44,6 +70,8 @@ const AdditionalTab = ({
           <input
             id="length"
             type="number"
+            value={length}
+            onChange={(e) => setlength(e.target.value)}
             placeholder="0"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -53,6 +81,8 @@ const AdditionalTab = ({
           <input
             id="width"
             type="number"
+            value={width}
+            onChange={(e) => setWidth(e.target.value)}
             placeholder="0"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -62,6 +92,8 @@ const AdditionalTab = ({
           <input
             id="height"
             type="number"
+            value={height}
+            onChange={(e) => setHeight(e.target.value)}
             placeholder="0"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -88,6 +120,8 @@ const AdditionalTab = ({
             <label htmlFor="returnWindow">Return Window (Days)</label>
             <select
               id="returnWindow"
+              value={returnWindow}
+              onChange={(e) => setReturnWindow(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="7">7 Days</option>
@@ -100,11 +134,13 @@ const AdditionalTab = ({
             <label htmlFor="returnType">Return Type</label>
             <select
               id="returnType"
+              value={returnType}
+              onChange={(e) => setReturnType(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="refund">Refund Only</option>
-              <option value="replacement">Replacement Only</option>
-              <option value="refund_or_replacement">Refund or Replacement</option>
+              <option value="0">Refund Only</option>
+              <option value="1">Replacement Only</option>
+              <option value="2">Refund or Replacement</option>
             </select>
           </div>
         </div>
@@ -112,6 +148,8 @@ const AdditionalTab = ({
           <label htmlFor="returnConditions">Return Conditions</label>
           <textarea
             id="returnConditions"
+            value={returnConditions}
+            onChange={(e) => setReturnConditions(e.target.value)}
             placeholder="e.g., Only unused and unopened items accepted"
             rows={2}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -122,11 +160,13 @@ const AdditionalTab = ({
           <label htmlFor="returnShipping">Return Shipping Borne By</label>
           <select
             id="returnShipping"
+            value={returnShipping}
+            onChange={(e) => setReturnShipping(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="customer">Customer</option>
-            <option value="seller">Seller</option>
-            <option value="platform">Platform</option>
+            <option value="0">Customer</option>
+            <option value="1">Seller</option>
+            <option value="2">Platform</option>
           </select>
         </div>
         </>)}
@@ -148,13 +188,16 @@ const AdditionalTab = ({
           <label htmlFor="codAvailable">COD Available</label>
           <p className="text-sm text-gray-500">Cash on delivery</p>
         </div>
-        <input type="checkbox" id="codAvailable" defaultChecked />
+        <input type="checkbox" id="codAvailable"  checked={codAvailable}
+            onChange={(e) => setCodAvailable(e.target.checked)} defaultChecked />
       </div>
 
       <div className="space-y-2">
         <label htmlFor="warrantyInfo">Warranty Information</label>
         <textarea
           id="warrantyInfo"
+          value={warrantyInfo}
+          onChange={(e) => setWarrantyInfo(e.target.value)}
           placeholder="Warranty details"
           rows={2}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -165,6 +208,8 @@ const AdditionalTab = ({
         <label htmlFor="customAttributes">Custom Attributes</label>
         <input
           id="customAttributes"
+          value={customAttributes}
+          onChange={(e) => setCustomAttributes(e.target.value)}
           placeholder="e.g., Fabric Type: Cotton, Season: Summer"
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />

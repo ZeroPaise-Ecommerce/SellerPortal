@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Stepper from "@/components/ui/stepper";
 import useAppDispatch from "@/hooks/useAppDispatch";
-import { addBasicInfoProductRequest, addMediaProductRequest, addPricingProductRequest, addWarehouseProductRequest } from "@/store/Inventory/product/actions";
+import { addBasicInfoProductRequest, addMediaProductRequest, addPricingProductRequest, addWarehouseProductRequest, addSEOProductRequest, addAdditionalSEOProductRequest } from "@/store/Inventory/product/actions";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useSelector } from "react-redux";
@@ -26,7 +26,7 @@ import MediaTab from "./tabs/MediaTab";
 import SeoTab from "./tabs/SeoTab";
 import AdditionalTab from "./tabs/AdditionalTab";
 import VisibilityTab from "./tabs/VisibilityTab";
-import { any } from "zod";
+import { any, boolean } from "zod";
 import { createPricing } from "@/store/Inventory/product/sagas";
 
 // --- START: Inlined Form Components (AddBrandForm, AddCategoryForm, AddCountryForm) ---
@@ -265,7 +265,19 @@ const AddItemForm = ({ onClose }) => {
   const [tags, setTags] = useState("");
   const [visible, setVisible] = useState(true);
   const [featured, setFeatured] = useState(false);
-  const [countryOfOrigin, setCountryOfOrigin] = useState("");
+  const [countryOrgin, setCountryOrgin] = useState("");
+  const [length, setLength] = useState(0);
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
+  const [weight, setWeight] = useState(0);
+  const [returnable, setReturnable] = useState(false);
+  const [returnWindow, setReturnWindow] = useState(0);
+  const [returnType, setReturnType] = useState(0);
+  const [returnConditions, setReturnConditions] = useState("");
+  const [returnShipping, setReturnShipping] = useState(0);
+  const [codAvailable, setCodAvailable] = useState(false);
+  const [warrantyInfo, setWarrantyInfo] = useState("");
+  const [customAttributes, setCustomAttributes] = useState("");
   const [variantCombinations, setVariantCombinations] = useState<VariantCombination[]>([]);
 
 
@@ -468,12 +480,36 @@ const AddItemForm = ({ onClose }) => {
       case "additional":
         return (
           <AdditionalTab
-            countryOfOrigin={countryOfOrigin}
-            setCountryOfOrigin={setCountryOfOrigin}
-            countries={countries}
-            returnSettings={returnSettings}
-            setReturnSettings={setReturnSettings}
-          />
+          countryOfOrigin={countryOrgin}
+          setCountryOfOrigin={setCountryOrgin}
+          countries={countries}
+          length={length}
+          setlength={setLength}
+          width={width}
+          setWidth={setWidth}
+          height={height}
+          setHeight={setHeight}
+          weight={weight}
+          setWeight={setWeight}
+          returnable={returnable}
+          setReturnable={setReturnable}
+          returnWindow={returnWindow}
+          setReturnWindow={setReturnWindow}
+          returnType={returnType}
+          setReturnType={setReturnType}
+          returnConditions={returnConditions}
+          setReturnConditions={setReturnConditions}
+          returnShipping={returnShipping}
+          setReturnShipping={setReturnShipping}
+          codAvailable={codAvailable}
+          setCodAvailable={setCodAvailable}
+          warrantyInfo={warrantyInfo}
+          setWarrantyInfo={setWarrantyInfo}
+          customAttributes={customAttributes}
+          setCustomAttributes={setCustomAttributes}
+          returnSettings={returnSettings}
+          setReturnSettings={setReturnSettings}
+        />        
         );
       default:
         return null;
@@ -586,7 +622,7 @@ const AddItemForm = ({ onClose }) => {
             Save as Draft
           </Button>
           <Button
-            onClick={currentStep === steps.length - 1 ? handleSaveAndPublish : handleNext}
+            onClick={currentStep === steps.length - 1 ? handleNext : handleNext}
             className="px-4 py-2 bg-green-600 hover:bg-green-700"
           >
            { currentStep === steps.length - 1 ? 'Save & Publish' : 'Save & Next'}
@@ -653,14 +689,27 @@ const AddItemForm = ({ onClose }) => {
         };
         dispatch(addWarehouseProductRequest(inventoryPayload));
         break;
-      case "additional":
-        const additionalPayload = {
-          countryOfOrigin,
-          weight: any,
-          returnSettings,
-        };
-        dispatch(addBasicInfoProductRequest(additionalPayload));
-        break;
+        case "additional":
+          const additionalPayload = {
+            productId: editingProduct?.basicInfo?.productId,
+            variantId: "0",
+            countryOrgin,
+            length,
+            width,
+            height,
+            weight,
+            returnable,
+            returnWindow,
+            returnType,
+            returnConditions,
+            returnShipping,
+            codAvailable,
+            warrantyInfo,
+            customAttributes,
+            returnSettings,
+          };
+          dispatch(addAdditionalSEOProductRequest(additionalPayload));
+          break;      
       case "channels":
         const channelsPayload = {
           channels,
@@ -680,17 +729,18 @@ const AddItemForm = ({ onClose }) => {
         break;
       case "seo":
         const seoPayload = { 
+          productId: editingProduct?.basicInfo?.productId,
+          variantId: "0",
           metaTitle,
           metaDescription,
-          tags,
+          Keywords: tags,
         };
-        dispatch(addBasicInfoProductRequest(seoPayload));
+        dispatch(addSEOProductRequest(seoPayload));
         break;
       case "visibility":
         const payload = {
           visible,
           featured,
-          countryOfOrigin,
         };
         dispatch(addBasicInfoProductRequest(payload));
         break;    

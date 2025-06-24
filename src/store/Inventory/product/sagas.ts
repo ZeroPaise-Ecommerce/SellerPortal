@@ -11,7 +11,13 @@ import {
   addWarehouseProductFailure,
   addMediaProductSuccess,
   addMediaProductFailure,
-  ADD_MEDIA__PRODUCT_REQUEST
+  ADD_MEDIA__PRODUCT_REQUEST,
+  addSEOProductSuccess,
+  addSEOProductFailure,
+  ADD_SEO__PRODUCT_REQUEST,
+  addAdditionalProductSuccess,
+  addAdditionalProductFailure,
+  ADD_ADDITIONAL__PRODUCT_REQUEST
 } from './actions';
 import * as api from '../../../services/productService';
 
@@ -60,6 +66,24 @@ export function* createMedia(action: any) {
   }
 }
 
+export function* createSEO(action: any) {
+  try {
+    const response = yield call(api.CreateActions, action.payload, "amendSeoTag");
+    yield put(addSEOProductSuccess(response));
+  } catch (error: any) {
+    yield put(addSEOProductFailure(error.message));
+  }
+}
+
+
+export function* createAdditional(action: any) {
+  try {
+    const response = yield call(api.CreateActions, action.payload, "amendAdditionalSettings");
+    yield put(addAdditionalProductSuccess(response));
+  } catch (error: any) {
+    yield put(addAdditionalProductFailure(error.message));
+  }
+}
 
 export function* productSaga1() {
   yield takeLatest(GET_PRODUCTS_REQUEST, fetchProducts);
@@ -67,5 +91,7 @@ export function* productSaga1() {
   yield takeLatest(ADD_PRICING_PRODUCT_REQUEST, createPricing);
   yield takeLatest(ADD_WAREHOUSE__PRODUCT_REQUEST, createWarehouse);
   yield takeLatest(ADD_MEDIA__PRODUCT_REQUEST, createMedia);
+  yield takeLatest(ADD_SEO__PRODUCT_REQUEST, createSEO);
+  yield takeLatest(ADD_ADDITIONAL__PRODUCT_REQUEST, createAdditional);
   yield put({ type: 'SET_STAGE_COMPLETED', payload: true });
 }
