@@ -41,11 +41,10 @@ export const createBasicInfo = async (basicInfo: any) => {
   return await res.json();
 };
 
-export const CreatePricing = async (pricing: any) => {
+export const CreateActions = async (payLoad: any, actionParameter: any) => {
 
   const dataWithId = {
-    ...pricing,
-    Id: uuidv4(), 
+    ...payLoad,
     createdDate: new Date().toISOString(),
     updatedDate: new Date().toISOString(),
     createdBy: '',
@@ -54,7 +53,7 @@ export const CreatePricing = async (pricing: any) => {
 
   const payload = {
     "targetService":"Inventory",
-    "action":"products/amendProductPricing",
+    "action":`products/${actionParameter}`,
     payload: dataWithId
   };
 
@@ -67,3 +66,33 @@ export const CreatePricing = async (pricing: any) => {
   if (!res.ok) throw new Error('Failed to add product');
   return await res.json();
 };
+
+
+export const CreateVariant = async (variant: any) => {
+
+  // const dataWithId = {
+  //   ...variant,
+  //   Id: uuidv4(), 
+  //   createdDate: new Date().toISOString(),
+  //   updatedDate: new Date().toISOString(),
+  //   createdBy: '',
+  //   updatedBy: '',    
+  // };
+
+  const payload = {
+    "targetService":"Inventory",
+    "action":"products/amendProductVariant",
+    payload: variant
+  };
+
+  const res = await fetch('http://localhost:5266/gateway/products/forward', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    redirect: "manual"
+  });
+  if (!res.ok) throw new Error('Failed to add product');
+  return await res.json();
+};
+
+

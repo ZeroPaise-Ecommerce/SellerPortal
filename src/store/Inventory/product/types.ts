@@ -27,6 +27,8 @@
 //   operation: number;}
 // }
 
+import { UUID } from "crypto";
+
 export interface BasicInfo {
   id: string;
   productId: number;
@@ -45,15 +47,21 @@ export interface BasicInfo {
 }
 
 export interface Variant {
-  id: string;
+  id: UUID;
   variantName: string;
+  variantOption: string;
+  variantValues: string;
   variantSKU: string;
   variantType: string;
   visibilityType: string;
+  createdDate: string;
+  updatedDate: string;
+  createdBy: string;
+  updatedBy: string;
 }
 
 export interface Pricing {
-  id: string;
+  id: number;
   pricing: string;
   pricingType: string;
   taxClass: string;
@@ -63,16 +71,33 @@ export interface Pricing {
 }
 
 export interface Inventory {
-  id: string;
-  inventory: string;
-  inventoryType: string;
+  id: number;
+  warehouse: number;
+  stock: string;
+  reOrderPoint: number;
+  incomingStock: number;
+  expiryDate: string;
 }
 
-export interface Additional {
-  id: string;
-  additional: string;
-  additionalType: string;
+export interface AdditionalSettings {
+  id: number;
+  productId: number;
+  variantId: number;
+  countryOrgin: string;
+  length: number;
+  width: number;
+  height: number;
+  weight: number;
+  returnable: boolean;
+  returnWindow: number; // consider using enum if applicable
+  returnType: number;   // consider using enum if applicable
+  returnConditions: string;
+  returnShipping: number; // consider using enum if applicable
+  codAvailable: boolean;
+  warrantyInfo: string;
+  customAttributes: string;
 }
+
 
 export interface Channel {
   id: string;
@@ -82,14 +107,21 @@ export interface Channel {
 
 export interface Media {
   id: string;
-  media: string;
-  mediaType: string;
+  productId: number;
+  variantId: number;
+  galleryImages: string[];
+  mainImages: string[];
+  channelSpecificImages: string[];
+  videoUploadLink: string;
 }
 
 export interface Seo {
   id: string;
-  seo: string;
-  seoType: string;
+  productId: number;
+  variantId: number;
+  MetaTitle: string;
+  MetaDescription: string;
+  Keywords: string;
 }
 
 export interface Visibility {
@@ -103,7 +135,7 @@ export interface Product {
   variants?: Variant[];
   pricing?: Pricing;
   inventory?: Inventory;
-  additional?: Additional;
+  AdditionalSettings?: AdditionalSettings;
   channels?: Channel[];
   media?: Media[];
   seo?: Seo;
