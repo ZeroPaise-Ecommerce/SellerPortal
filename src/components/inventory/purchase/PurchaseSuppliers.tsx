@@ -49,12 +49,24 @@ const PurchaseSuppliers = () => {
   const [activeStatus, setActiveStatus] = useState<{ [key: string]: boolean }>({});
   const dispatch = useDispatch();
 
+  const [passSupplier, setPassSupplier] = useState<any>(null); // State to hold supplier data for editing
 
   // Import RootState from your Redux store definition
-
+  
   const { suppliers, loading, error } = useSelector(
     (state: any) => state.supplier
   );
+
+  const editSupplier = (supplier: any) => () => {
+    setPassSupplier(supplier); // Store the supplier data to be edited
+    console.log("Edit supplier:", passSupplier);
+    setShowAddSupplier(true);
+  }
+
+  const handleAddSupplier = () => {
+    setPassSupplier(null); // Clear any existing supplier data
+    setShowAddSupplier(true);
+  };
 
   // ⬇️ Trigger saga to fetch suppliers
   useEffect(() => {
@@ -91,7 +103,7 @@ useEffect(() => {
   const totalCredits = suppliers?.reduce((sum, supplier) => sum + supplier.credits, 0);
 
   if (showAddSupplier) {
-    return <AddSupplierForm onClose={() => setShowAddSupplier(false)} />;
+    return <AddSupplierForm supplier={passSupplier} onClose={() => setShowAddSupplier(false)} />;
   }
 
   return (
@@ -150,7 +162,7 @@ useEffect(() => {
             />
           </div>
           <Button 
-            onClick={() => setShowAddSupplier(true)}
+            onClick={() => handleAddSupplier()}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -221,6 +233,7 @@ useEffect(() => {
                           variant="ghost" 
                           size="sm" 
                           className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-600"
+                          onClick={editSupplier(supplier)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>

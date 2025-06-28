@@ -29,7 +29,7 @@ import { createSupplierRequest, getSupplierRequest } from "@/store/Inventory/sup
 import { set } from "date-fns";
 
 
-const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
+const AddSupplierForm = ({supplier, onClose }: {  supplier: Supplier; onClose: () => void }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [sameAsShipping, setSameAsShipping] = useState(false);
   const [address, setAddress] = useState<SupplierAddress[]>([]);
@@ -57,57 +57,81 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
 
   //submit form data to the server
   const handleSubmit =  () => {
-    setSupplierData({
-      supplierId: 0,
-      id: 0,
-      firstName: generalData.firstName,
-      lastName: generalData.lastName,
-      emailAddress: generalData.email,
-      mobileNumber: generalData.mobile,
-      companyName: generalData.companyName,
-      supplierNickName: generalData.supplierNickName,
-      gstin: generalData.gstin,
-      pan: generalData.pan,
-      currency: generalData.currency,
-      designation: generalData.designation,
-      heading: comments[0].heading, // Provide a value or add a heading field to your form if needed
-      addresses: [
-        {
-          id: "0",
-          supplierId: 0,
-          addressType: "billing",
-          addressLine1: addressData.billing.addressLine1,
-          addressLine2: addressData.billing.addressLine2,
-          city: addressData.billing.city,
-          state: addressData.billing.state,
-          pinCode: addressData.billing.pincode,
-          country: addressData.billing.country
-        },
-        {
-          id: "0",
-          supplierId: 0,
-          addressType: "shipping",
-          addressLine1: addressData.shipping.addressLine1,
-          addressLine2: addressData.shipping.addressLine2,
-          city: addressData.shipping.city,
-          state: addressData.shipping.state,
-          pinCode: addressData.shipping.pincode,
-          country: addressData.shipping.country
-        }
-      ],
-      contactDetails: [...contactPersons],
-      bankingDetails: [...bankAccounts],
-      comments: comments[0].comment, // Or however you want to aggregate comments
-    });
+    const payload = {
+  supplierId: supplier?.supplierId || 0,
+  id: supplier?.id || 0,
+  firstName: generalData.firstName,
+  lastName: generalData.lastName,
+  emailAddress: generalData.email,
+  mobileNumber: generalData.mobile,
+  companyName: generalData.companyName,
+  supplierNickName: generalData.supplierNickName,
+  gstin: generalData.gstin,
+  pan: generalData.pan,
+  currency: generalData.currency,
+  designation: generalData.designation,
+  heading: comments[0]?.heading || "",
+  addresses: [
+    {
+      id: supplier?.addresses?.[0]?.id || "0",
+      supplierId: supplier?.addresses?.[0]?.supplierId || 0,
+      addressType: "billing",
+      addressLine1: addressData.billing.addressLine1,
+      addressLine2: addressData.billing.addressLine2,
+      city: addressData.billing.city,
+      state: addressData.billing.state,
+      pinCode: addressData.billing.pincode,
+      country: addressData.billing.country
+    },
+    {
+      id: supplier?.addresses?.[1]?.id || "0",
+      supplierId: supplier?.addresses?.[1]?.supplierId || 0,
+      addressType: "shipping",
+      addressLine1: addressData.shipping.addressLine1,
+      addressLine2: addressData.shipping.addressLine2,
+      city: addressData.shipping.city,
+      state: addressData.shipping.state,
+      pinCode: addressData.shipping.pincode,
+      country: addressData.shipping.country
+    }
+  ],
+  contactDetails: contactPersons.map((contact) => {
+    const match = supplier?.contactDetails?.find(
+      (c) => c.firstName === contact.firstName && c.mobileNumber === contact.mobileNumber
+    );
+    return {
+      ...contact,
+      id: match?.id || "0",
+      supplierId: match?.supplierId || 0,
+    };
+  }),
+  bankingDetails: bankAccounts.map((bank) => {
+    const match = supplier?.bankingDetails?.find((b) => b.bankName === bank.bankName);
+    return {
+      ...bank,
+      id: match?.id || "0",
+      supplierId: match?.supplierId || 0,
+    };
+  }),
+  comments: comments[0]?.comment || "",
+};
 
+    console.log("Submitting supplier data:", payload);
+    setSupplierData(payload);
     console.log("Submitting supplier data:", supplierData);
+ 
     //dispatch supplier creation action
-    dispatch(createSupplierRequest(supplierData));
+    dispatch(createSupplierRequest(payload));
 
   }
 
   // 2. Listen for the result using useEffect
 useEffect(() => {
+  
+  if(supplier){
+    setSupplierEditAction();
+  }
+
   if (stageCompleted) {
     if (!error) {
       dispatch(getSupplierRequest()); // Reset stage completed state
@@ -120,6 +144,44 @@ useEffect(() => {
 
      // 🔁 Reset the flag
     dispatch({ type: 'RESET_STAGE_COMPLETED' });
+  }
+
+  function setSupplierEditAction() {
+    console.log("Received suppliers:", supplier);
+    setGeneralData({
+      firstName: supplier.firstName,
+      lastName: supplier.lastName,
+      email: supplier.emailAddress,
+      supplierNickName: supplier.supplierNickName,
+      companyName: supplier.companyName,
+      mobile: supplier.mobileNumber,
+      gstin: supplier.gstin,
+      pan: supplier.pan,
+      currency: supplier.currency,
+      designation: supplier.designation
+    });
+
+    setAddressData({
+      billing: {
+        addressLine1: supplier?.addresses[0]?.addressLine1,
+        addressLine2: supplier?.addresses[0]?.addressLine2,
+        city: supplier?.addresses[0]?.city,
+        pincode: supplier?.addresses[0]?.pinCode,
+        state: supplier?.addresses[0]?.state,
+        country: supplier?.addresses[0]?.country
+      },
+      shipping: {
+        addressLine1: supplier?.addresses[1]?.addressLine1,
+        addressLine2: supplier?.addresses[1]?.addressLine2,
+        city: supplier?.addresses[1]?.city,
+        pincode: supplier?.addresses[1]?.pinCode,
+        state: supplier?.addresses[1]?.state,
+        country: supplier?.addresses[1]?.country
+      }
+    });
+
+    setBankAccounts(supplier?.bankingDetails || []);
+    setContactPersons(supplier?.contactDetails || []);
   }
 }, [stageCompleted, error,dispatch]);
 
@@ -194,7 +256,7 @@ useEffect(() => {
   const handleAddBankAccount = () => {
     if (bankFormData.bankName && bankFormData.accountNumber && bankFormData.ifsc) {
       const newAccount: SupplierBanking = {
-        id: "0",
+        id:"0",
         supplierId: 0,
        ...bankFormData
       };
@@ -895,7 +957,9 @@ useEffect(() => {
         <div className="mx-auto"> 
           {/* max-w-4xl */}
           <div className="mb-6">
-            <h2 className="text-2xl font-bold">Add Supplier</h2>
+            <h2 className="text-2xl font-bold">
+                 {supplier ? `Edit Supplier ${supplier.firstName}` : "Add Supplier"}
+            </h2>
             <div className="flex items-center gap-2 mt-4">
               {stepTitles.map((title, index) => (
                 <div key={index} className="flex items-center">
