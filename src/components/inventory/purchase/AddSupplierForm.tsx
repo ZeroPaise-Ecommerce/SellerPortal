@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,41 +23,167 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash, Edit } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { Supplier, SupplierAddress, SupplierBanking, SupplierContact } from "@/store/Inventory/supplier/types";
+import { useDispatch, useSelector } from "react-redux";
+import { createSupplierRequest, getSupplierRequest } from "@/store/Inventory/supplier/actions";
+import { set } from "date-fns";
 
-interface BankAccount {
-  id: number;
-  bankName: string;
-  accountHolder: string;
-  accountNumber: string;
-  ifsc: string;
-  remarks: string;
-}
 
-interface ContactPerson {
-  id: number;
-  firstName: string;
-  lastName: string;
-  mobile: string;
-  email: string;
-  workPhone: string;
-  remarks: string;
-}
-
-interface Comment {
-  id: number;
-  heading: string;
-  comment: string;
-}
-
-const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
+const AddSupplierForm = ({supplier, onClose }: {  supplier: Supplier; onClose: () => void }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [sameAsShipping, setSameAsShipping] = useState(false);
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [contactPersons, setContactPersons] = useState<ContactPerson[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [address, setAddress] = useState<SupplierAddress[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<SupplierBanking[]>([]);
+  const [contactPersons, setContactPersons] = useState<SupplierContact[]>([]);
+  const [comments, setComments] = useState<any[]>([]);
   const [showBankForm, setShowBankForm] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
+  const [supplierData, setSupplierData] = useState<Supplier>({} as Supplier);
+  const dispatch = useDispatch();
+  const { stageCompleted, error } = useSelector((state: any) => state.supplier);
+ 
+  const handleClose = () => {
+    onClose();
+    setCurrentStep(1);
+    setSameAsShipping(false);
+    setBankAccounts([]);
+    setContactPersons([]);
+    setComments([]);
+    setShowBankForm(false);
+    setShowContactForm(false);
+    setShowCommentForm(false);
+  };
+
+  //submit form data to the server
+  const handleSubmit =  () => {
+    const payload = {
+  supplierId: supplier?.supplierId || 0,
+  id: supplier?.id || 0,
+  firstName: generalData.firstName,
+  lastName: generalData.lastName,
+  emailAddress: generalData.email,
+  mobileNumber: generalData.mobile,
+  companyName: generalData.companyName,
+  supplierNickName: generalData.supplierNickName,
+  gstin: generalData.gstin,
+  pan: generalData.pan,
+  currency: generalData.currency,
+  designation: generalData.designation,
+  heading: comments[0]?.heading || "",
+  addresses: [
+    {
+      id: supplier?.addresses?.[0]?.id || "0",
+      supplierId: supplier?.addresses?.[0]?.supplierId || 0,
+      addressType: "billing",
+      addressLine1: addressData.billing.addressLine1,
+      addressLine2: addressData.billing.addressLine2,
+      city: addressData.billing.city,
+      state: addressData.billing.state,
+      pinCode: addressData.billing.pincode,
+      country: addressData.billing.country
+    },
+    {
+      id: supplier?.addresses?.[1]?.id || "0",
+      supplierId: supplier?.addresses?.[1]?.supplierId || 0,
+      addressType: "shipping",
+      addressLine1: addressData.shipping.addressLine1,
+      addressLine2: addressData.shipping.addressLine2,
+      city: addressData.shipping.city,
+      state: addressData.shipping.state,
+      pinCode: addressData.shipping.pincode,
+      country: addressData.shipping.country
+    }
+  ],
+  contactDetails: contactPersons.map((contact) => {
+    const match = supplier?.contactDetails?.find(
+      (c) => c.firstName === contact.firstName && c.mobileNumber === contact.mobileNumber
+    );
+    return {
+      ...contact,
+      id: match?.id || "0",
+      supplierId: match?.supplierId || 0,
+    };
+  }),
+  bankingDetails: bankAccounts.map((bank) => {
+    const match = supplier?.bankingDetails?.find((b) => b.bankName === bank.bankName);
+    return {
+      ...bank,
+      id: match?.id || "0",
+      supplierId: match?.supplierId || 0,
+    };
+  }),
+  comments: comments[0]?.comment || "",
+};
+
+    console.log("Submitting supplier data:", payload);
+    setSupplierData(payload);
+    console.log("Submitting supplier data:", supplierData);
+ 
+    //dispatch supplier creation action
+    dispatch(createSupplierRequest(payload));
+
+  }
+
+  // 2. Listen for the result using useEffect
+useEffect(() => {
+  
+  if(supplier){
+    setSupplierEditAction();
+  }
+
+  if (stageCompleted) {
+    if (!error) {
+      dispatch(getSupplierRequest()); // Reset stage completed state
+      handleClose();
+      alert('✅ Supplier created!');
+      
+    } else {
+      alert('❌ Error creating supplier: ' + error);
+    }
+
+     // 🔁 Reset the flag
+    dispatch({ type: 'RESET_STAGE_COMPLETED' });
+  }
+
+  function setSupplierEditAction() {
+    console.log("Received suppliers:", supplier);
+    setGeneralData({
+      firstName: supplier.firstName,
+      lastName: supplier.lastName,
+      email: supplier.emailAddress,
+      supplierNickName: supplier.supplierNickName,
+      companyName: supplier.companyName,
+      mobile: supplier.mobileNumber,
+      gstin: supplier.gstin,
+      pan: supplier.pan,
+      currency: supplier.currency,
+      designation: supplier.designation
+    });
+
+    setAddressData({
+      billing: {
+        addressLine1: supplier?.addresses[0]?.addressLine1,
+        addressLine2: supplier?.addresses[0]?.addressLine2,
+        city: supplier?.addresses[0]?.city,
+        pincode: supplier?.addresses[0]?.pinCode,
+        state: supplier?.addresses[0]?.state,
+        country: supplier?.addresses[0]?.country
+      },
+      shipping: {
+        addressLine1: supplier?.addresses[1]?.addressLine1,
+        addressLine2: supplier?.addresses[1]?.addressLine2,
+        city: supplier?.addresses[1]?.city,
+        pincode: supplier?.addresses[1]?.pinCode,
+        state: supplier?.addresses[1]?.state,
+        country: supplier?.addresses[1]?.country
+      }
+    });
+
+    setBankAccounts(supplier?.bankingDetails || []);
+    setContactPersons(supplier?.contactDetails || []);
+  }
+}, [stageCompleted, error,dispatch]);
 
   // Form data
   const [generalData, setGeneralData] = useState({
@@ -94,9 +220,9 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
 
   const [bankFormData, setBankFormData] = useState({
     bankName: "",
-    accountHolder: "",
+    accountHolderName: "",
     accountNumber: "",
-    reenterAccountNumber: "",
+    reEnterAccountNumber: "",
     ifsc: "",
     remarks: ""
   });
@@ -104,8 +230,8 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
   const [contactFormData, setContactFormData] = useState({
     firstName: "",
     lastName: "",
-    mobile: "",
-    email: "",
+    mobileNumber: "",
+    emailAddress: "",
     workPhone: "",
     remarks: ""
   });
@@ -129,16 +255,17 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
 
   const handleAddBankAccount = () => {
     if (bankFormData.bankName && bankFormData.accountNumber && bankFormData.ifsc) {
-      const newAccount: BankAccount = {
-        id: Date.now(),
-        ...bankFormData
+      const newAccount: SupplierBanking = {
+        id:"0",
+        supplierId: 0,
+       ...bankFormData
       };
       setBankAccounts([...bankAccounts, newAccount]);
       setBankFormData({
         bankName: "",
-        accountHolder: "",
+        accountHolderName: "",
         accountNumber: "",
-        reenterAccountNumber: "",
+        reEnterAccountNumber: "",
         ifsc: "",
         remarks: ""
       });
@@ -147,17 +274,18 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
   };
 
   const handleAddContactPerson = () => {
-    if (contactFormData.firstName && contactFormData.mobile) {
-      const newContact: ContactPerson = {
-        id: Date.now(),
+    if (contactFormData.firstName && contactFormData.mobileNumber) {
+      const newContact: SupplierContact = {
+        id: "0",
+        supplierId: 0,
         ...contactFormData
       };
       setContactPersons([...contactPersons, newContact]);
       setContactFormData({
         firstName: "",
         lastName: "",
-        mobile: "",
-        email: "",
+        mobileNumber: "",
+        emailAddress: "",
         workPhone: "",
         remarks: ""
       });
@@ -167,8 +295,7 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
 
   const handleAddComment = () => {
     if (commentFormData.heading && commentFormData.comment) {
-      const newComment: Comment = {
-        id: Date.now(),
+      const newComment: any = {
         ...commentFormData
       };
       setComments([...comments, newComment]);
@@ -507,8 +634,8 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
                 <Label htmlFor="accountHolder">Account Holder Name *</Label>
                 <Input
                   id="accountHolder"
-                  value={bankFormData.accountHolder}
-                  onChange={(e) => setBankFormData({...bankFormData, accountHolder: e.target.value})}
+                  value={bankFormData.accountHolderName}
+                  onChange={(e) => setBankFormData({...bankFormData, accountHolderName: e.target.value})}
                 />
               </div>
               <div>
@@ -523,8 +650,8 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
                 <Label htmlFor="reenterAccountNumber">Re-enter Account Number *</Label>
                 <Input
                   id="reenterAccountNumber"
-                  value={bankFormData.reenterAccountNumber}
-                  onChange={(e) => setBankFormData({...bankFormData, reenterAccountNumber: e.target.value})}
+                  value={bankFormData.reEnterAccountNumber}
+                  onChange={(e) => setBankFormData({...bankFormData, reEnterAccountNumber: e.target.value})}
                 />
               </div>
               <div>
@@ -572,7 +699,7 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
                 {bankAccounts.map((account) => (
                   <TableRow key={account.id}>
                     <TableCell>{account.bankName}</TableCell>
-                    <TableCell>{account.accountHolder}</TableCell>
+                    <TableCell>{account.accountHolderName}</TableCell>
                     <TableCell>{account.accountNumber}</TableCell>
                     <TableCell>{account.ifsc}</TableCell>
                     <TableCell>
@@ -633,8 +760,8 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
                 <Label htmlFor="contactMobile">Mobile Number *</Label>
                 <Input
                   id="contactMobile"
-                  value={contactFormData.mobile}
-                  onChange={(e) => setContactFormData({...contactFormData, mobile: e.target.value})}
+                  value={contactFormData.mobileNumber}
+                  onChange={(e) => setContactFormData({...contactFormData, mobileNumber: e.target.value})}
                 />
               </div>
               <div>
@@ -642,8 +769,8 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
                 <Input
                   id="contactEmail"
                   type="email"
-                  value={contactFormData.email}
-                  onChange={(e) => setContactFormData({...contactFormData, email: e.target.value})}
+                  value={contactFormData.emailAddress}
+                  onChange={(e) => setContactFormData({...contactFormData, emailAddress: e.target.value})}
                 />
               </div>
               <div>
@@ -691,8 +818,8 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
                 {contactPersons.map((contact) => (
                   <TableRow key={contact.id}>
                     <TableCell>{`${contact.firstName} ${contact.lastName}`}</TableCell>
-                    <TableCell>{contact.mobile}</TableCell>
-                    <TableCell>{contact.email}</TableCell>
+                    <TableCell>{contact.mobileNumber}</TableCell>
+                    <TableCell>{contact.emailAddress}</TableCell>
                     <TableCell>{contact.workPhone}</TableCell>
                     <TableCell>
                       <Button
@@ -826,11 +953,13 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
   ];
 
   return (
-    <DashboardLayout>
       <div className="p-6">
-        <div className="max-w-4xl mx-auto">
+        <div className="mx-auto"> 
+          {/* max-w-4xl */}
           <div className="mb-6">
-            <h2 className="text-2xl font-bold">Add Supplier</h2>
+            <h2 className="text-2xl font-bold">
+                 {supplier ? `Edit Supplier ${supplier.firstName}` : "Add Supplier"}
+            </h2>
             <div className="flex items-center gap-2 mt-4">
               {stepTitles.map((title, index) => (
                 <div key={index} className="flex items-center">
@@ -879,7 +1008,7 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
                   Next
                 </Button>
               ) : (
-                <Button onClick={onClose}>
+                <Button onClick={handleSubmit}>
                   Save Supplier
                 </Button>
               )}
@@ -887,7 +1016,7 @@ const AddSupplierForm = ({ onClose }: { onClose: () => void }) => {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+
   );
 };
 

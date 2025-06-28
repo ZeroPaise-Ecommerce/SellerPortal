@@ -28,6 +28,8 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
   isEdit?: boolean;
   orderId?: string;
 }) => {
+
+  let passSupplier =undefined;
   const [showSupplierForm, setShowSupplierForm] = useState(false);
   const [items, setItems] = useState([
     { id: 1, name: "", quantity: 0, rate: 0, amount: 0 }
@@ -57,7 +59,7 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
   const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
 
   if (showSupplierForm) {
-    return <AddSupplierForm onClose={() => setShowSupplierForm(false)} />;
+    return <AddSupplierForm supplier={passSupplier}  onClose={() => setShowSupplierForm(false)} />;
   }
 
   return (
