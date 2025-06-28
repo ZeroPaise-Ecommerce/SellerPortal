@@ -1,7 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+
 import {
   Table,
   TableBody,
@@ -28,6 +29,8 @@ import {
 import { Search, Plus, Eye, Edit, Building2, Users, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AddSupplierForm from "./AddSupplierForm";
+import { useDispatch, useSelector } from "react-redux";
+import { getSupplierRequest } from "@/store/Inventory/supplier/actions";
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -37,63 +40,46 @@ const formatIndianCurrency = (amount: number) => {
   }).format(amount);
 };
 
+
 const PurchaseSuppliers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState("10");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddSupplier, setShowAddSupplier] = useState(false);
+  const [activeStatus, setActiveStatus] = useState<{ [key: string]: boolean }>({});
+  const dispatch = useDispatch();
 
-  const suppliers = [
-    {
-      id: 1,
-      name: "Rajesh Kumar",
-      companyName: "Tata Steel Limited",
-      mobile: "+91 98765 43210",
-      email: "rajesh.k@tatasteel.com",
-      payable: 125000,
-      credits: 50000
-    },
-    {
-      id: 2,
-      name: "Anita Sharma",
-      companyName: "Reliance Industries Ltd.",
-      mobile: "+91 87654 32109",
-      email: "anita.s@ril.com",
-      payable: 245000,
-      credits: 75000
-    },
-    {
-      id: 3,
-      name: "Vikram Singh",
-      companyName: "Infosys Limited",
-      mobile: "+91 76543 21098",
-      email: "vikram.s@infosys.com",
-      payable: 89000,
-      credits: 25000
-    },
-    {
-      id: 4,
-      name: "Priya Patel",
-      companyName: "Mahindra & Mahindra",
-      mobile: "+91 65432 10987",
-      email: "priya.p@mahindra.com",
-      payable: 156000,
-      credits: 40000
-    },
-    {
-      id: 5,
-      name: "Anil Reddy",
-      companyName: "Asian Paints Ltd.",
-      mobile: "+91 54321 09876",
-      email: "anil.r@asianpaints.com",
-      payable: 67000,
-      credits: 15000
-    },
-  ];
 
-  const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.companyName.toLowerCase().includes(searchTerm.toLowerCase())
+  // Import RootState from your Redux store definition
+
+  const { suppliers, loading, error } = useSelector(
+    (state: any) => state.supplier
+  );
+
+  // ⬇️ Trigger saga to fetch suppliers
+  useEffect(() => {
+    dispatch(getSupplierRequest()); // Reset stage completed state
+  }, [dispatch]);
+
+// 🔹 Wait for API to complete and act on result
+useEffect(() => {
+  if (!loading && suppliers?.suppliers?.length > 0) {
+    // ✅ perform any "after fetch" logic here
+    // e.g., setActiveStatus, initialize form, etc.
+
+      const statusMap: { [key: string]: boolean } = {};
+      suppliers.suppliers.forEach((s) => {
+        statusMap[s.id] = s.active ?? false;
+      });
+      setActiveStatus(statusMap);
+  }
+}, [loading, suppliers]);
+
+
+  
+  const filteredSuppliers = suppliers?.filter(supplier =>
+    supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supplier?.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredSuppliers.length / parseInt(itemsPerPage));
@@ -101,14 +87,15 @@ const PurchaseSuppliers = () => {
   const paginatedSuppliers = filteredSuppliers.slice(startIndex, startIndex + parseInt(itemsPerPage));
 
   // Calculate totals for stats
-  const totalPayable = suppliers.reduce((sum, supplier) => sum + supplier.payable, 0);
-  const totalCredits = suppliers.reduce((sum, supplier) => sum + supplier.credits, 0);
+  const totalPayable = suppliers?.reduce((sum, supplier) => sum + supplier.payable, 0);
+  const totalCredits = suppliers?.reduce((sum, supplier) => sum + supplier.credits, 0);
 
   if (showAddSupplier) {
     return <AddSupplierForm onClose={() => setShowAddSupplier(false)} />;
   }
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -200,23 +187,25 @@ const PurchaseSuppliers = () => {
                       <div className="flex items-center">
                         <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                           <span className="text-blue-600 font-semibold text-sm">
-                            {supplier.name.charAt(0)}
+                            {supplier?.firstName?.charAt(0)}
                           </span>
                         </div>
-                        {supplier.name}
+                        {supplier?.firstName ? (
+                          <span className="text-gray-900 font-medium">{supplier?.firstName + " " + supplier?.lastName}</span>
+                        ) : null }
                       </div>
                     </TableCell>
-                    <TableCell className="text-gray-700">{supplier.companyName}</TableCell>
-                    <TableCell className="text-gray-700">{supplier.mobile}</TableCell>
-                    <TableCell className="text-gray-700">{supplier.email}</TableCell>
+                    <TableCell className="text-gray-700">{supplier?.companyName}</TableCell>
+                    <TableCell className="text-gray-700">{supplier?.mobileNumber}</TableCell>
+                    <TableCell className="text-gray-700">{supplier?.emailAddress}</TableCell>
                     <TableCell className="text-right">
                       <span className="text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-md">
-                        {formatIndianCurrency(supplier.payable)}
+                        {formatIndianCurrency(supplier?.payable)}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <span className="text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-md">
-                        {formatIndianCurrency(supplier.credits)}
+                        {formatIndianCurrency(supplier?.credits)}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -295,7 +284,13 @@ const PurchaseSuppliers = () => {
         )}
       </div>
     </div>
+    </>
   );
+  
 };
 
 export default PurchaseSuppliers;
+function dispatch(arg0: any) {
+  throw new Error("Function not implemented.");
+}
+
