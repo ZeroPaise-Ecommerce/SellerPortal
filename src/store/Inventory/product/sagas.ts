@@ -17,7 +17,16 @@ import {
   ADD_SEO__PRODUCT_REQUEST,
   addAdditionalProductSuccess,
   addAdditionalProductFailure,
-  ADD_ADDITIONAL__PRODUCT_REQUEST
+  ADD_ADDITIONAL__PRODUCT_REQUEST,
+  addVariantProductSuccess,
+  addVariantProductFailure,
+  ADD_VARIANT_REQUEST,
+  addChannelsProductSuccess,
+  addChannelsProductFailure,
+  ADD_CHANNELS_REQUEST,
+  GET_INVENTORY_ITEMS_REQUEST,
+  getInventoryItemsSuccess,
+  getInventoryItemsFailure
 } from './actions';
 import * as api from '../../../services/productService';
 
@@ -85,6 +94,33 @@ export function* createAdditional(action: any) {
   }
 }
 
+export function* createVariant(action: any) {
+  try {
+    const response = yield call(api.CreateActions, action.payload, "amendProductVariant");
+    yield put(addVariantProductSuccess(response));
+  } catch (error: any) {
+    yield put(addVariantProductFailure(error.message));
+  }
+}
+
+export function* createChannels(action: any) {
+  try {
+    const response = yield call(api.CreateActions, action.payload, "amendChannelListing");
+    yield put(addChannelsProductSuccess(response));
+  } catch (error: any) {
+    yield put(addChannelsProductFailure(error.message));
+  }
+}
+
+export function* getInventoryItems(action: any) {
+  try {
+    const response = yield call(api.GetDataFromService, "getProducts", null);
+    yield put(getInventoryItemsSuccess(response));
+  } catch (error: any) {
+    yield put(getInventoryItemsFailure(error.message));
+  }
+}
+
 export function* productSaga1() {
   yield takeLatest(GET_PRODUCTS_REQUEST, fetchProducts);
   yield takeLatest(ADD_BASIC_INFO_PRODUCT_REQUEST, addBasicInfo);
@@ -93,5 +129,8 @@ export function* productSaga1() {
   yield takeLatest(ADD_MEDIA__PRODUCT_REQUEST, createMedia);
   yield takeLatest(ADD_SEO__PRODUCT_REQUEST, createSEO);
   yield takeLatest(ADD_ADDITIONAL__PRODUCT_REQUEST, createAdditional);
+  yield takeLatest(ADD_VARIANT_REQUEST, createVariant);
+  yield takeLatest(ADD_CHANNELS_REQUEST, createChannels);
+  yield takeLatest(GET_INVENTORY_ITEMS_REQUEST, getInventoryItems);
   yield put({ type: 'SET_STAGE_COMPLETED', payload: true });
 }

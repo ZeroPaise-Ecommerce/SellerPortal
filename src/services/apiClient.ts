@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an Axios instance with interceptors
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_GATEWAY_URL,
 });
 
 axiosInstance.interceptors.request.use(

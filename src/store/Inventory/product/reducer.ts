@@ -13,12 +13,22 @@ import {
   ADD_MEDIA_PRODUCT_SUCCESS,
   ADD_SEO_PRODUCT_SUCCESS,
   ADD_MEDIA_PRODUCT_FAILURE,
-  ADD_SEO_PRODUCT_FAILURE
+  ADD_SEO_PRODUCT_FAILURE,
+  ADD_VARIANT_REQUEST,
+  ADD_VARIANT_SUCCESS,
+  ADD_VARIANT_FAILURE,
+  ADD_CHANNELS_REQUEST,
+  ADD_CHANNELS_SUCCESS,
+  ADD_CHANNELS_FAILURE,
+  GET_INVENTORY_ITEMS_FAILURE,
+  GET_INVENTORY_ITEMS_SUCCESS,
+  GET_INVENTORY_ITEMS_REQUEST
 } from './actions';
 import { ProductState } from './types';
 
 const initialState: ProductState = {
   products: [],
+  inventoryItems: [],
   editingProduct: null,
   loading: false,
   error: null,
@@ -33,6 +43,9 @@ export const productReducer = (state = initialState, action: any): ProductState 
     case ADD_WAREHOUSE__PRODUCT_REQUEST:
     case ADD_MEDIA__PRODUCT_REQUEST:
     case ADD_SEO__PRODUCT_REQUEST:
+    case ADD_VARIANT_REQUEST:
+    case ADD_CHANNELS_REQUEST:
+    case GET_INVENTORY_ITEMS_REQUEST:
       return { ...state, loading: true, error: null };
 
     case GET_PRODUCTS_SUCCESS:
@@ -45,6 +58,28 @@ export const productReducer = (state = initialState, action: any): ProductState 
         editingProduct: {
           ...state.editingProduct,
           basicInfo: action.payload,
+        },
+        stageCompleted: true,
+      };
+    
+      case ADD_VARIANT_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        editingProduct: {
+          ...state.editingProduct,
+          variants: action.payload,
+        },
+        stageCompleted: true,
+      };
+
+    case ADD_CHANNELS_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        editingProduct: {
+          ...state.editingProduct,
+          channels: action.payload,
         },
         stageCompleted: true,
       };
@@ -93,6 +128,9 @@ export const productReducer = (state = initialState, action: any): ProductState 
         stageCompleted: true,
       };
 
+    case GET_INVENTORY_ITEMS_SUCCESS:
+      return { ...state, loading: false, inventoryItems: action.payload.products };
+
     case GET_PRODUCTS_FAILURE:
     case ADD_BASIC_INFO_PRODUCT_FAILURE:
     case ADD_PRICING_PRODUCT_FAILURE:
@@ -100,6 +138,9 @@ export const productReducer = (state = initialState, action: any): ProductState 
     case ADD_WAREHOUSE_PRODUCT_FAILURE:
     case ADD_MEDIA_PRODUCT_FAILURE:
     case ADD_SEO_PRODUCT_FAILURE:
+    case ADD_VARIANT_FAILURE:
+    case ADD_CHANNELS_FAILURE:
+    case GET_INVENTORY_ITEMS_FAILURE:
       return { ...state, loading: false, error: action.payload, stageCompleted: true };    
     case 'RESET_STAGE_COMPLETED':
     return {
