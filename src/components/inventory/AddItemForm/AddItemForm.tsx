@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Stepper from "@/components/ui/stepper";
 import useAppDispatch from "@/hooks/useAppDispatch";
-import { addBasicInfoProductRequest, addMediaProductRequest, addPricingProductRequest, addWarehouseProductRequest, addSEOProductRequest, addAdditionalSEOProductRequest } from "@/store/Inventory/product/actions";
+import { addBasicInfoProductRequest, addMediaProductRequest, addPricingProductRequest, addWarehouseProductRequest, addSEOProductRequest, addAdditionalSEOProductRequest, addVariantProductRequest, addChannelsProductRequest, getInventoryItemsRequest } from "@/store/Inventory/product/actions";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useSelector } from "react-redux";
@@ -28,6 +28,7 @@ import AdditionalTab from "./tabs/AdditionalTab";
 import VisibilityTab from "./tabs/VisibilityTab";
 import { any, boolean } from "zod";
 import { createPricing } from "@/store/Inventory/product/sagas";
+import { VariantOption, VariantOptionState, VariantCombination, VariantRequest} from "@/store/Inventory/product/types";
 
 // --- START: Inlined Form Components (AddBrandForm, AddCategoryForm, AddCountryForm) ---
 // These components were previously in separate files but are inlined here to resolve import errors.
@@ -179,15 +180,15 @@ const AddCountryForm = ({ isOpen, onClose, onSave }) => {
   );
 };
 
-interface VariantCombination {
-  id: string;
-  attributes: { [key: string]: string };
-  mrp: string;
-  sellingPrice: string;
-  costPrice: string;
-  stock: string;
-  image?: string;
-}
+// interface VariantCombination {
+//   id: string;
+//   attributes: { [key: string]: string };
+//   mrp: string;
+//   sellingPrice: string;
+//   costPrice: string;
+//   stock: string;
+//   image?: string;
+// }
 
 function pickFields<T extends object, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
   const result = {} as Pick<T, K>;
@@ -279,7 +280,42 @@ const AddItemForm = ({ onClose }) => {
   const [warrantyInfo, setWarrantyInfo] = useState("");
   const [customAttributes, setCustomAttributes] = useState("");
   const [variantCombinations, setVariantCombinations] = useState<VariantCombination[]>([]);
+  const [selectedChannelId, setSelectedChannelId] = useState();
+  const [selectedChannel, setSelectedChannel] = useState('website');
+  const [websiteTitle, setWebsiteTitle] = useState("");
+  const [websiteSku, setWebsiteSku] = useState("");
+  const [websiteShortDesc, setWebsiteShortDesc] = useState("");
+  const [websiteDesc, setWebsiteDesc] = useState("");
+  const [websiteSpecs, setWebsiteSpecs] = useState("");
 
+  const generateSku = (attributes: Record<string, string>): string => {
+    return Object.values(attributes).join('-').toUpperCase();
+  };
+
+  const buildCreateProductVariantRequest = (
+    productId: number,
+    variants: VariantOptionState[],
+    variantCombinations: VariantCombination[]
+  ): VariantRequest => {
+    return {
+      productId,
+      Options: variants.map(v => ({
+        name: v.option,
+        values: v.values,
+      })),
+      VariantCombinations: variantCombinations.map(combo => ({
+        sku: generateSku(combo.attributes),
+        mrp: Number(combo.mrp),
+        sellingPrice: Number(combo.sellingPrice),
+        costPrice: Number(combo.costPrice),
+        stock: Number(combo.stock),
+        OptionValueNames: Object.values(combo.attributes),
+        images: (combo.images || []).map(url => ({ imageUrl: url })),
+      })),
+      createdBy: '',
+      updatedBy: ''
+    };
+  };
 
   const generateVariantCombinations = () => {
     if (variants.length === 0 || variants.some(v => !v.option || v.values.some(val => !val))) {
@@ -294,10 +330,10 @@ const AddItemForm = ({ onClose }) => {
         combinations.push({
           id: Date.now().toString() + Math.random().toString(),
           attributes: { ...currentCombo },
-          mrp: "",
-          sellingPrice: "",
-          costPrice: "",
-          stock: ""
+          mrp: 0,
+          sellingPrice: 0,
+          costPrice: 0,
+          stock: 0
         });
         return;
       }
@@ -452,7 +488,22 @@ const AddItemForm = ({ onClose }) => {
           />
         );
       case "channels":
-        return <ChannelsTab />;
+        return <ChannelsTab 
+        selectedChannel={selectedChannel}
+        setSelectedChannel={setSelectedChannel}
+        selectedChannelId={selectedChannelId}
+        setSelectedChannelId={setSelectedChannelId}
+        websiteTitle={websiteTitle}
+        setWebsiteTitle={setWebsiteTitle}
+        websiteSku={websiteSku}
+        setWebsiteSku={setWebsiteSku}
+        websiteShortDesc={websiteShortDesc}
+        setWebsiteShortDesc={setWebsiteShortDesc}
+        websiteDesc={websiteDesc}
+        setWebsiteDesc={setWebsiteDesc}
+        websiteSpecs={websiteSpecs}
+        setWebsiteSpecs={setWebsiteSpecs}
+        />;
       case "media":
         return (
           <MediaTab
@@ -568,6 +619,7 @@ const AddItemForm = ({ onClose }) => {
       pricing: ["mrp", "sellingPrice"],
       inventory: ["stockQuantity"],
       additional: ["countryOrigin", "weight"],
+      channels: ["websiteTitle", "websiteSku", "websiteShortDesc", "websiteDesc", "websiteSpecs"],
     };
     //check if all required fields are filled
     const fields = requiredFields[currentStepId];
@@ -600,7 +652,11 @@ const AddItemForm = ({ onClose }) => {
   };
 
   const handleSaveAsDraft = () => alert("Save as draft");
-  const handleSaveAndPublish = () => alert("Save and Publish clicked");
+  const handleSaveAndPublish = () => {
+    saveStepToStore(steps[currentStep].id);
+    dispatch(getInventoryItemsRequest());
+    onClose();
+  };
   
 
   const renderStepperNavigation = () => {
@@ -622,7 +678,7 @@ const AddItemForm = ({ onClose }) => {
             Save as Draft
           </Button>
           <Button
-            onClick={currentStep === steps.length - 1 ? handleNext : handleNext}
+            onClick={currentStep === steps.length - 1 ? handleSaveAndPublish : handleNext}
             className="px-4 py-2 bg-green-600 hover:bg-green-700"
           >
            { currentStep === steps.length - 1 ? 'Save & Publish' : 'Save & Next'}
@@ -631,6 +687,8 @@ const AddItemForm = ({ onClose }) => {
       </div>
     );
   }
+
+  
   
 
   // Handler to collect all data and dispatch to store/api
@@ -650,19 +708,14 @@ const AddItemForm = ({ onClose }) => {
         };
         dispatch(addBasicInfoProductRequest(basicPayload));
         break;
-      case "variants":       
-        const variantPayload = {
-          productId: editingProduct?.basicInfo?.productId,
-          variants: variants.map((v) => ({
-            ...v,
-            id: v.id || crypto.randomUUID(), // or generate with uuid
-            createdDate: currentDate,
-            updatedDate: currentDate,
-            createdBy: currentUser,
-            updatedBy: currentUser,
-          })),
-        };
-        dispatch(addBasicInfoProductRequest(variantPayload));
+      case "variants":     
+      if (productType !== "simple") {
+        const variantPayload = buildCreateProductVariantRequest(
+          editingProduct?.basicInfo?.productId,
+          variants,
+          variantCombinations
+        );
+        dispatch(addVariantProductRequest(variantPayload));}
         break;
       case "pricing":
         const pricingPayload = {
@@ -670,7 +723,7 @@ const AddItemForm = ({ onClose }) => {
           variantId: 0,
           mrp,
           sellingPrice,
-          costPrice,
+          cost: costPrice,
           taxClass,
           hsnCode,
           gstType
@@ -682,7 +735,7 @@ const AddItemForm = ({ onClose }) => {
           productId: editingProduct?.basicInfo?.productId,
           variantId: "0",
           warehouseId : 1,
-          stock,
+          StockQuantity: stock,
           reorderPoint,
           incomingStock,
           expiryDate
@@ -712,9 +765,16 @@ const AddItemForm = ({ onClose }) => {
           break;      
       case "channels":
         const channelsPayload = {
-          channels,
+          productId: editingProduct?.basicInfo?.productId,
+          variantId: "0",
+          ChannelName: selectedChannel,
+          Title: websiteTitle,
+          SKU: websiteSku,
+          ShortDescription: websiteShortDesc,
+          Description: websiteDesc,
+          Specification: websiteSpecs,
         };
-        dispatch(addBasicInfoProductRequest(channelsPayload));
+        dispatch(addChannelsProductRequest(channelsPayload));
         break;  
       case "media":
         const mediaPayload = {
