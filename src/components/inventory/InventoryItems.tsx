@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +46,9 @@ import {
   AlertOctagon
 } from "lucide-react";
 import AddItemForm from "./AddItemForm/AddItemForm";
+import { getInventoryItemsRequest } from "@/store/Inventory/product/actions";
+import useAppDispatch from "@/hooks/useAppDispatch";
+import useAppSelector from "@/hooks/useAppSelector";
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -62,92 +65,103 @@ const InventoryItems = () => {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
-  const items = [
-    {
-      id: "ITM001",
-      itemId: "ITEM-001",
-      sku: "WE-001-BLK",
-      name: "Wireless Earbuds",
-      variants: "+3 variants",
-      category: "Electronics",
-      supplier: "TechCorp Ltd",
-      buyPrice: 45.99,
-      salePrice: 89.99,
-      qty: 245,
-      stockValue: 11267.55,
-      status: "Active",
-    },
-    {
-      id: "ITM002",
-      itemId: "ITEM-002",
-      sku: "SW-005-SLV",
-      name: "Smart Watch Series 5",
-      variants: "+2 variants",
-      category: "Electronics",
-      supplier: "GadgetHub Inc",
-      buyPrice: 149.99,
-      salePrice: 249.99,
-      qty: 120,
-      stockValue: 17998.8,
-      status: "Active",
-    },
-    {
-      id: "ITM003",
-      itemId: "ITEM-003",
-      sku: "BS-010-RED",
-      name: "Bluetooth Speaker",
-      variants: "+4 variants",
-      category: "Electronics",
-      supplier: "AudioMax",
-      buyPrice: 35.50,
-      salePrice: 59.99,
-      qty: 88,
-      stockValue: 3124,
-      status: "Active",
-    },
-    {
-      id: "ITM004",
-      itemId: "ITEM-004",
-      sku: "PC-101-CLR",
-      name: "Phone Case Premium",
-      variants: "+6 variants",
-      category: "Accessories",
-      supplier: "CaseMaster",
-      buyPrice: 8.50,
-      salePrice: 24.99,
-      qty: 320,
-      stockValue: 2720,
-      status: "Active",
-    },
-    {
-      id: "ITM005",
-      itemId: "ITEM-005",
-      sku: "USB-056-WHT",
-      name: "USB-C Cable",
-      variants: "+2 variants",
-      category: "Accessories",
-      supplier: "CableTech",
-      buyPrice: 4.99,
-      salePrice: 19.99,
-      qty: 12,
-      stockValue: 59.88,
-      status: "Low Stock",
-    },
-    {
-      id: "ITM006",
-      itemId: "ITEM-006",
-      sku: "WC-022-BLK",
-      name: "Wireless Charger",
-      variants: "+1 variant",
-      category: "Electronics",
-      supplier: "PowerTech",
-      buyPrice: 22.50,
-      salePrice: 45.99,
-      qty: 0,
-      stockValue: 0,
-      status: "Out of Stock",
-    },
-  ];
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    dispatch(getInventoryItemsRequest());
+  }, [dispatch]);
+
+  const { inventoryItems } = useAppSelector((state: any) => state.product);
+
+  const items = inventoryItems;
+
+  console.log(items);
+
+  // const items = [
+  //   {
+  //     id: "ITM001",
+  //     itemId: "ITEM-001",
+  //     sku: "WE-001-BLK",
+  //     name: "Wireless Earbuds",
+  //     variants: "+3 variants",
+  //     category: "Electronics",
+  //     supplier: "TechCorp Ltd",
+  //     buyPrice: 45.99,
+  //     salePrice: 89.99,
+  //     qty: 245,
+  //     stockValue: 11267.55,
+  //     status: "Active",
+  //   },
+  //   {
+  //     id: "ITM002",
+  //     itemId: "ITEM-002",
+  //     sku: "SW-005-SLV",
+  //     name: "Smart Watch Series 5",
+  //     variants: "+2 variants",
+  //     category: "Electronics",
+  //     supplier: "GadgetHub Inc",
+  //     buyPrice: 149.99,
+  //     salePrice: 249.99,
+  //     qty: 120,
+  //     stockValue: 17998.8,
+  //     status: "Active",
+  //   },
+  //   {
+  //     id: "ITM003",
+  //     itemId: "ITEM-003",
+  //     sku: "BS-010-RED",
+  //     name: "Bluetooth Speaker",
+  //     variants: "+4 variants",
+  //     category: "Electronics",
+  //     supplier: "AudioMax",
+  //     buyPrice: 35.50,
+  //     salePrice: 59.99,
+  //     qty: 88,
+  //     stockValue: 3124,
+  //     status: "Active",
+  //   },
+  //   {
+  //     id: "ITM004",
+  //     itemId: "ITEM-004",
+  //     sku: "PC-101-CLR",
+  //     name: "Phone Case Premium",
+  //     variants: "+6 variants",
+  //     category: "Accessories",
+  //     supplier: "CaseMaster",
+  //     buyPrice: 8.50,
+  //     salePrice: 24.99,
+  //     qty: 320,
+  //     stockValue: 2720,
+  //     status: "Active",
+  //   },
+  //   {
+  //     id: "ITM005",
+  //     itemId: "ITEM-005",
+  //     sku: "USB-056-WHT",
+  //     name: "USB-C Cable",
+  //     variants: "+2 variants",
+  //     category: "Accessories",
+  //     supplier: "CableTech",
+  //     buyPrice: 4.99,
+  //     salePrice: 19.99,
+  //     qty: 12,
+  //     stockValue: 59.88,
+  //     status: "Low Stock",
+  //   },
+  //   {
+  //     id: "ITM006",
+  //     itemId: "ITEM-006",
+  //     sku: "WC-022-BLK",
+  //     name: "Wireless Charger",
+  //     variants: "+1 variant",
+  //     category: "Electronics",
+  //     supplier: "PowerTech",
+  //     buyPrice: 22.50,
+  //     salePrice: 45.99,
+  //     qty: 0,
+  //     stockValue: 0,
+  //     status: "Out of Stock",
+  //   },
+  // ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -309,19 +323,19 @@ const InventoryItems = () => {
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                     }`}
                   >
-                    <TableCell className="font-medium text-blue-600 py-4">{item.itemId}</TableCell>
-                    <TableCell className="text-gray-700 font-mono text-sm">{item.sku}</TableCell>
+                    <TableCell className="font-medium text-blue-600 py-4">{item.productId + '' + item.productName}</TableCell>
+                    <TableCell className="text-gray-700 font-mono text-sm">{item.SKU}</TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium text-gray-900">{item.name}</div>
+                        <div className="font-medium text-gray-900">{item.productName}</div>
                         <div className="text-sm text-blue-600">{item.variants}</div>
                       </div>
                     </TableCell>
                     <TableCell className="text-gray-700">{item.category}</TableCell>
                     <TableCell className="text-gray-700">{item.supplier}</TableCell>
                     <TableCell className="text-right font-medium">{formatIndianCurrency(item.buyPrice)}</TableCell>
-                    <TableCell className="text-right font-medium">{formatIndianCurrency(item.salePrice)}</TableCell>
-                    <TableCell className="text-right font-medium">{item.qty}</TableCell>
+                    <TableCell className="text-right font-medium">{formatIndianCurrency(item.sellPrice)}</TableCell>
+                    <TableCell className="text-right font-medium">{item.stockQuantity}</TableCell>
                     <TableCell className="text-right font-semibold text-gray-900">
                       {formatIndianCurrency(item.stockValue)}
                     </TableCell>

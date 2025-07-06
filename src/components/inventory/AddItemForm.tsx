@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Stepper from "../ui/stepper";
 import useAppDispatch from "@/hooks/useAppDispatch";
-import { addProductRequest } from "@/store/Inventory/product/actions";
+import { addBasicInfoProductRequest } from "@/store/Inventory/product/actions";
 import { Switch } from "../ui/switch";
 import { Input } from "../ui/input";
 import { add } from "date-fns";
@@ -1324,7 +1324,7 @@ const AddItemForm = ({ onClose }) => {
       featured,
       countryOfOrigin,
     };
-    dispatch(addProductRequest(payload));
+    dispatch(addBasicInfoProductRequest(payload));
   };
 
   return (

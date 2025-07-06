@@ -46,18 +46,46 @@ export interface BasicInfo {
   operation: number;
 }
 
-export interface Variant {
-  id: UUID;
-  variantName: string;
-  variantOption: string;
-  variantValues: string;
-  variantSKU: string;
-  variantType: string;
-  visibilityType: string;
-  createdDate: string;
-  updatedDate: string;
+export interface VariantRequest {
+  productId: number;
+  Options: VariantOption[];
+  VariantCombinations: ProductVariant[];
   createdBy: string;
   updatedBy: string;
+}
+
+export interface VariantOption {
+  name: string;
+  values: string[];
+}
+
+export interface ProductVariant {
+  sku: string;
+  mrp: number;
+  sellingPrice: number;
+  costPrice: number;
+  stock: number;
+  OptionValueNames: string[]; // Use values instead of IDs
+  images: Image[];
+}
+
+export interface Image {
+  imageUrl: string;
+}
+
+export interface VariantOptionState {
+  option: string;
+  values: string[];
+}
+
+export interface VariantCombination {
+  id: string;
+  attributes: Record<string, string>;
+  mrp: number;
+  sellingPrice: number;
+  costPrice?: number;
+  stock: number;
+  images?: string[]; // URLs
 }
 
 export interface Pricing {
@@ -102,7 +130,11 @@ export interface AdditionalSettings {
 export interface Channel {
   id: string;
   channel: string;
-  channelType: string;
+  websiteTitle: string;
+  websiteSku: string;
+  websiteShortDesc: string;
+  websiteDesc: string;
+  websiteSpecs: string;
 }
 
 export interface Media {
@@ -132,7 +164,7 @@ export interface Visibility {
 
 export interface Product {
   basicInfo?: BasicInfo;
-  variants?: Variant[];
+  variants?: VariantRequest;
   pricing?: Pricing;
   inventory?: Inventory;
   AdditionalSettings?: AdditionalSettings;
@@ -144,8 +176,26 @@ export interface Product {
 
 export interface ProductState {
   products: Product[];
+  inventoryItems: InventoryItem[];
   editingProduct: null | Product;
   loading: boolean;
   error: string | null;
   stageCompleted: boolean;
+}
+
+export interface InventoryItem {
+  itemId: string;
+  sku: string;
+  name: string;
+  category: string;
+  supplier: string;
+  buyPrice: number;
+  sellPrice: number;
+  qty: number;
+  stockValue: number;
+  status: string;
+}
+
+export interface InventoryItems {
+  products: InventoryItem[];
 }
