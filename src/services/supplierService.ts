@@ -2,7 +2,7 @@ import axiosInstance from './apiClient';
 import { GatewayRequest } from '@/types/plans';
 import { v4 as uuidv4 } from 'uuid';
 
-    let baseurl = import.meta.env.VITE_API_GATEWAY_URL;
+    const baseurl = import.meta.env.VITE_API_GATEWAY_URL;
 
 
 // Define API functions
