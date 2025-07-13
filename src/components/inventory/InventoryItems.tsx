@@ -173,6 +173,8 @@ const InventoryItems = () => {
   };
 
   const totalItems = items.length;
+  const uniqueCategories = new Set(items.map(item => item.category));
+  const numberOfCategories = uniqueCategories.size;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -214,7 +216,7 @@ const InventoryItems = () => {
             <ShoppingCart className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">8</div>
+            <div className="text-2xl font-bold text-purple-900">{numberOfCategories}</div>
             <p className="text-xs text-purple-600 mt-1">Product categories</p>
           </CardContent>
         </Card>
