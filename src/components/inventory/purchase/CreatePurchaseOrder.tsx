@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,44 +21,89 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash, Upload } from "lucide-react";
 import AddSupplierForm from "./AddSupplierForm";
+import { addPurchaseOrderRequest } from "@/store/Inventory/purchase/actions";
+import useAppDispatch from "@/hooks/useAppDispatch";
 
 const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: { 
   onClose: () => void; 
   isEdit?: boolean;
   orderId?: string;
 }) => {
-
-  let passSupplier =undefined;
+  const dispatch = useAppDispatch();
+  let passSupplier = undefined;
   const [showSupplierForm, setShowSupplierForm] = useState(false);
-  const [items, setItems] = useState([
-    { id: 1, name: "", quantity: 0, rate: 0, amount: 0 }
-  ]);
 
-  const addItem = () => {
-    setItems([...items, { id: Date.now(), name: "", quantity: 0, rate: 0, amount: 0 }]);
+  const generatePurchaseOrderNumber = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `PO-${year}${month}${day}-${randomNum}`;
   };
 
-  const removeItem = (id: number) => {
-    setItems(items.filter(item => item.id !== id));
+  const [purchaseOrder, setPurchaseOrder] = useState({
+    supplierId: "1",
+    supplierName: "",
+    purchaseOrderNumber: generatePurchaseOrderNumber(),
+    inventory: "",
+    expectedDeliveryDate: "",
+    purchaseOrderDate: new Date().toISOString().split("T")[0],
+    referenceNumber: "",
+    paymentPolicy: "",
+    notesToSupplier: "",
+    attachments: [],
+    items: [{ id: 1, itemName: "", account: "", quantity: 0, rate: 0, amount: 0, description: ""}],
+  });
+
+  const addItem = () => {
+    const newItem = { id: Date.now(), itemName: "", account: "", quantity: 0, rate: 0, amount: 0, description: "" };
+    setPurchaseOrder((prev) => ({ ...prev, items: [...prev.items, newItem] }));
   };
 
   const updateItem = (id: number, field: string, value: any) => {
-    setItems(items.map(item => {
-      if (item.id === id) {
-        const updated = { ...item, [field]: value };
-        if (field === 'quantity' || field === 'rate') {
-          updated.amount = updated.quantity * updated.rate;
+    setPurchaseOrder((prev) => ({
+      ...prev,
+      items: prev.items.map((item) => {
+        if (item.id === id) {
+          const updated = { ...item, [field]: value };
+          if (field === "quantity" || field === "rate") {
+            updated.amount = updated.quantity * updated.rate;
+          }
+          return updated;
         }
-        return updated;
-      }
-      return item;
+        return item;
+      }),
     }));
   };
 
-  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+  const removeItem = (id: number) => {
+    setPurchaseOrder((prev) => ({
+      ...prev,
+      items: prev.items.filter((item) => item.id !== id),
+    }));
+  };
+
+  const totalAmount = purchaseOrder.items.reduce((sum, item) => sum + item.amount, 0);
+
+  const createPurchaseOrder = async () => {
+    console.log("createPurchaseOrder function called");
+    const payload = {
+      ...purchaseOrder,
+      createdBy: "admin",
+      updatedBy: "admin",
+      createdDate: new Date().toISOString(),
+      updatedDate: new Date().toISOString(),
+      operation: 0,
+    };
+
+    console.log("Dispatching payload:", payload);
+    dispatch(addPurchaseOrderRequest(payload));
+    console.log("Dispatch completed");
+  };
 
   if (showSupplierForm) {
-    return <AddSupplierForm supplier={passSupplier}  onClose={() => setShowSupplierForm(false)} />;
+    return <AddSupplierForm supplier={passSupplier} onClose={() => setShowSupplierForm(false)} />;
   }
 
   return (
@@ -76,77 +120,98 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
             <div>
               <Label htmlFor="supplierName">Supplier Name *</Label>
               <div className="flex gap-2">
-                <Select>
+                <Select onValueChange={(value) => setPurchaseOrder(prev => ({ ...prev, supplierName: value }))}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Select or search supplier" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="supplier1">Tata Steel Limited</SelectItem>
-                    <SelectItem value="supplier2">Reliance Industries Ltd.</SelectItem>
-                    <SelectItem value="supplier3">Infosys Limited</SelectItem>
+                    <SelectItem value="Tata Steel Limited">Tata Steel Limited</SelectItem>
+                    <SelectItem value="Reliance Industries Ltd.">Reliance Industries Ltd.</SelectItem>
+                    <SelectItem value="Infosys Limited">Infosys Limited</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowSupplierForm(true)}
-                  className="whitespace-nowrap"
-                >
+                <Button variant="outline" onClick={() => setShowSupplierForm(true)} className="whitespace-nowrap">
                   Create Supplier
                 </Button>
               </div>
             </div>
+
             <div>
               <Label htmlFor="poNumber">Purchase Order Number</Label>
-              <Input id="poNumber" placeholder="Auto-generated" readOnly />
+              <Input 
+                id="poNumber" 
+                value={purchaseOrder.purchaseOrderNumber}
+                readOnly 
+                className="bg-gray-50"
+              />
             </div>
+
             <div>
               <Label htmlFor="inventory">Inventory</Label>
-              <Select>
+              <Select onValueChange={(value) => setPurchaseOrder(prev => ({ ...prev, inventory: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select inventory" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="main">Main Warehouse</SelectItem>
-                  <SelectItem value="store1">Retail Store 1</SelectItem>
-                  <SelectItem value="store2">Retail Store 2</SelectItem>
+                  <SelectItem value="Main Warehouse">Main Warehouse</SelectItem>
+                  <SelectItem value="Retail Store 1">Retail Store 1</SelectItem>
+                  <SelectItem value="Retail Store 2">Retail Store 2</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
             <div>
               <Label htmlFor="expectedDelivery">Expected Delivery</Label>
-              <Input id="expectedDelivery" type="date" />
+              <Input
+                id="expectedDelivery"
+                type="date"
+                value={purchaseOrder.expectedDeliveryDate}
+                onChange={(e) => setPurchaseOrder({ ...purchaseOrder, expectedDeliveryDate: e.target.value })}
+              />
             </div>
+
             <div>
               <Label htmlFor="poDate">Purchase Order Date</Label>
-              <Input id="poDate" type="date" />
+              <Input
+                id="poDate"
+                type="date"
+                value={purchaseOrder.purchaseOrderDate}
+                onChange={(e) => setPurchaseOrder({ ...purchaseOrder, purchaseOrderDate: e.target.value })}
+              />
             </div>
+
             <div>
               <Label htmlFor="paymentPolicy">Payment Policy</Label>
-              <Select>
+              <Select onValueChange={(value) => setPurchaseOrder(prev => ({ ...prev, paymentPolicy: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select payment policy" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="net30">Net 30</SelectItem>
-                  <SelectItem value="net15">Net 15</SelectItem>
-                  <SelectItem value="cod">Cash on Delivery</SelectItem>
-                  <SelectItem value="advance">Advance Payment</SelectItem>
+                  <SelectItem value="Net 30">Net 30</SelectItem>
+                  <SelectItem value="Net 15">Net 15</SelectItem>
+                  <SelectItem value="Cash on Delivery">Cash on Delivery</SelectItem>
+                  <SelectItem value="Advance Payment">Advance Payment</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
             <div className="col-span-3">
               <Label htmlFor="referenceNumber">Reference Number</Label>
-              <Input id="referenceNumber" />
+              <Input
+                id="referenceNumber"
+                value={purchaseOrder.referenceNumber}
+                onChange={(e) => setPurchaseOrder({ ...purchaseOrder, referenceNumber: e.target.value })}
+              />
             </div>
           </div>
 
+          {/* Items Table */}
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Items</CardTitle>
                 <Button onClick={addItem} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Item
+                  <Plus className="h-4 w-4 mr-2" /> Add Item
                 </Button>
               </div>
             </CardHeader>
@@ -162,13 +227,13 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {items.map((item) => (
+                  {purchaseOrder.items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
                         <Input
                           placeholder="Enter item name"
-                          value={item.name}
-                          onChange={(e) => updateItem(item.id, 'name', e.target.value)}
+                          value={item.itemName}
+                          onChange={(e) => updateItem(item.id, 'itemName', e.target.value)}
                         />
                       </TableCell>
                       <TableCell>
@@ -186,14 +251,10 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
-                          value={item.amount.toFixed(2)}
-                          readOnly
-                          className="bg-gray-50"
-                        />
+                        <Input value={item.amount.toFixed(2)} readOnly className="bg-gray-50" />
                       </TableCell>
                       <TableCell>
-                        {items.length > 1 && (
+                        {purchaseOrder.items.length > 1 && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -207,12 +268,8 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
                     </TableRow>
                   ))}
                   <TableRow>
-                    <TableCell colSpan={3} className="text-right font-medium">
-                      Total Amount:
-                    </TableCell>
-                    <TableCell className="font-bold">
-                      ₹{totalAmount.toFixed(2)}
-                    </TableCell>
+                    <TableCell colSpan={3} className="text-right font-medium">Total Amount:</TableCell>
+                    <TableCell className="font-bold">₹{totalAmount.toFixed(2)}</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableBody>
@@ -223,7 +280,13 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <Label htmlFor="supplierNote">Note for Supplier</Label>
-              <Textarea id="supplierNote" rows={4} placeholder="Enter any special instructions..." />
+              <Textarea
+                id="supplierNote"
+                rows={4}
+                placeholder="Enter any special instructions..."
+                value={purchaseOrder.notesToSupplier}
+                onChange={(e) => setPurchaseOrder({ ...purchaseOrder, notesToSupplier: e.target.value })}
+              />
             </div>
             <div>
               <Label htmlFor="fileUpload">Upload Files (Max 5MB)</Label>
@@ -242,7 +305,10 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
           <div className="flex gap-2">
             <Button variant="outline">Save as Draft</Button>
             <Button variant="outline">Save & Send</Button>
-            <Button>Save</Button>
+            <Button onClick={() => {
+              createPurchaseOrder();
+              onClose();
+            }}>Save</Button>
           </div>
         </div>
       </div>
