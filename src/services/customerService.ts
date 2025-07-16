@@ -56,13 +56,37 @@ export const updateCustomer = async (customerData: UpdateCustomerDto) => {
 
 // Delete customer
 export const deleteCustomer = async (customerId: number) => {
-  const res = await fetch(`${baseurl}/customers/${customerId}`, {
+  const res = await fetch(`${baseurl}/customer/${customerId}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     redirect: "manual"
   });
   
   if (!res.ok) throw new Error('Failed to delete customer');
+  return await res.json();
+};
+
+//Delete customer contact
+export const deleteCustomerContact = async (contactId: any) => {
+  const res = await fetch(`${baseurl}/Customer/contact/${contactId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    redirect: "manual"
+  });
+  
+  if (!res.ok) throw new Error('Failed to delete customer contact');
+  return await res.json();
+};
+
+//Delete customer banking details
+export const deleteCustomerBankingDetails = async (bankingId: any) => {
+  const res = await fetch(`${baseurl}/Customer/banking/${bankingId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    redirect: "manual"
+  });
+  
+  if (!res.ok) throw new Error('Failed to delete banking details');
   return await res.json();
 };
 

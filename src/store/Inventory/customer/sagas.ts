@@ -14,7 +14,13 @@ import {
   UPDATE_CUSTOMER_FAILURE,
   DELETE_CUSTOMER_REQUEST,
   DELETE_CUSTOMER_SUCCESS,
-  DELETE_CUSTOMER_FAILURE
+  DELETE_CUSTOMER_FAILURE,
+  DELETE_CUSTOMER_CONTACT_SUCCESS,
+  DELETE_CUSTOMER_CONTACT_FAILURE,
+  DELETE_CUSTOMER_BANKING_REQUEST,
+  DELETE_CUSTOMER_BANKING_SUCCESS,
+  DELETE_CUSTOMER_BANKING_FAILURE,
+  DELETE_CUSTOMER_CONTACT_REQUEST
 } from './actions';
 import { Customer, CustomerApiResponse } from './types';
 import { 
@@ -22,7 +28,9 @@ import {
   fetchCustomerById, 
   createCustomer, 
   updateCustomer, 
-  deleteCustomer 
+  deleteCustomer, 
+  deleteCustomerContact,
+  deleteCustomerBankingDetails
 } from '../../../services/customerService';
 
 // Sagas
@@ -75,6 +83,30 @@ function* deleteCustomerSaga(action: any) {
   }
 }
 
+// Delete customer contact saga
+function* deleteCustomerContactSaga(action: any) {
+  try { 
+    // Implement delete customer contact logic here
+    // Assuming a similar API call exists
+    yield call(deleteCustomerContact, action.payload);
+    yield put({ type: DELETE_CUSTOMER_CONTACT_SUCCESS, payload: action.payload });
+  } catch (error: any) {
+    yield put({ type: DELETE_CUSTOMER_CONTACT_FAILURE, payload: error.message }); 
+  }
+}
+
+
+function* deleteCustomerBankingSaga(action: any) {
+  try { 
+    // Implement delete customer banking logic here
+    // Assuming a similar API call exists
+    yield call(deleteCustomerBankingDetails, action.payload);
+    yield put({ type: DELETE_CUSTOMER_BANKING_SUCCESS, payload: action.payload });
+  } catch (error: any) {
+    yield put({ type: DELETE_CUSTOMER_BANKING_FAILURE, payload: error.message }); 
+  }
+}
+
 // Root saga
 export function* customerSaga() {
   yield takeLatest(CREATE_CUSTOMER_REQUEST, createCustomerSaga);
@@ -82,4 +114,6 @@ export function* customerSaga() {
   yield takeLatest(GET_CUSTOMER_BY_ID_REQUEST, getCustomerByIdSaga);
   yield takeLatest(UPDATE_CUSTOMER_REQUEST, updateCustomerSaga);
   yield takeLatest(DELETE_CUSTOMER_REQUEST, deleteCustomerSaga);
+  yield takeLatest(DELETE_CUSTOMER_CONTACT_REQUEST, deleteCustomerContactSaga);
+  yield takeLatest(DELETE_CUSTOMER_BANKING_REQUEST, deleteCustomerBankingSaga);
 } 
