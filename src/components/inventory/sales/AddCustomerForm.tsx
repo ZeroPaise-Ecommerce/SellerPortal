@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2 } from "lucide-react";
 import { Customer } from "@/store/Inventory/customer/types";
 import { useDispatch } from "react-redux";
-import { createCustomerRequest } from "@/store/Inventory/customer/actions";
+import { createCustomerRequest, deleteCustomerBankingRequest, deleteCustomerContactRequest } from "@/store/Inventory/customer/actions";
 
 interface AddCustomerFormProps {
   customer?: Customer | null;
@@ -135,6 +135,16 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose, onSuccess }: AddCu
   };
 
   const removeBankAccount = (id: number) => {
+    // Find the account to be removed
+    const account = bankAccounts.find(acc => acc.id === id);
+    // If the account has a real backend id, dispatch delete
+    if (account && account.id && account.id !== 1 && account.id !== undefined && customer && customer.bankingDetails) {
+      // Try to find the matching backend id by index
+      const backendAccount = customer.bankingDetails.find((b, idx) => idx + 1 === id);
+      if (backendAccount && backendAccount.id && backendAccount.id !== "00000000-0000-0000-0000-000000000000") {
+        dispatch(deleteCustomerBankingRequest(backendAccount.id));
+      }
+    }
     setBankAccounts(bankAccounts.filter(acc => acc.id !== id));
   };
 
@@ -143,6 +153,16 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose, onSuccess }: AddCu
   };
 
   const removeContactPerson = (id: number) => {
+    // Find the contact to be removed
+    const contact = contactPersons.find(person => person.id === id);
+    // If the contact has a real backend id, dispatch delete
+    if (contact && contact.id && contact.id !== 1 && contact.id !== undefined && customer && customer.contactDetails) {
+      // Try to find the matching backend id by index
+      const backendContact = customer.contactDetails.find((c, idx) => idx + 1 === id);
+      if (backendContact && backendContact.id && backendContact.id !== "00000000-0000-0000-0000-000000000000") {
+        dispatch(deleteCustomerContactRequest(backendContact.id));
+      }
+    }
     setContactPersons(contactPersons.filter(person => person.id !== id));
   };
 
