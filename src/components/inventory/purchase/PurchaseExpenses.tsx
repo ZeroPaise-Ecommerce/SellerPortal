@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +41,9 @@ import { Search, Plus, MoreHorizontal, FileText, Edit, CreditCard, Building, Cal
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import AddExpenseDialog from "./AddExpenseDialog";
+import { useDispatch, useSelector } from 'react-redux';
+import { createExpenseRequest, getExpenseRequest } from '@/store/Inventory/purchase/actions';
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -60,59 +62,19 @@ const PurchaseExpenses = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
   const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
+  const dispatch = useDispatch();
+  const expenseState = useSelector((state: any) => state.expense);
 
-  const expenses = [
-    {
-      id: "EXP-1001",
-      category: "Rent",
-      date: "30-Jun-2023",
-      amount: 50000,
-      paymentMethod: "Bank Transfer",
-      account: "HDFC XXX3652",
-      description: "Office Rent for June 2023"
-    },
-    {
-      id: "EXP-1002",
-      category: "Utilities",
-      date: "25-Jun-2023",
-      amount: 12500,
-      paymentMethod: "NEFT",
-      account: "SBI XXX7845",
-      description: "Electricity Bill for June 2023"
-    },
-    {
-      id: "EXP-1003",
-      category: "Transport",
-      date: "20-Jun-2023",
-      amount: 18750,
-      paymentMethod: "Credit Card",
-      account: "Visa XXX6365",
-      description: "Logistics and Delivery Expenses"
-    },
-    {
-      id: "EXP-1004",
-      category: "Salaries",
-      date: "05-Jun-2023",
-      amount: 350000,
-      paymentMethod: "Bank Transfer",
-      account: "ICICI XXX9876",
-      description: "Staff Salaries for May 2023"
-    },
-    {
-      id: "EXP-1005",
-      category: "Marketing",
-      date: "02-Jun-2023",
-      amount: 75000,
-      paymentMethod: "Cash",
-      account: "Cash",
-      description: "Digital Marketing Campaign"
-    },
-  ];
+  useEffect(() => {
+    dispatch(getExpenseRequest());
+  }, [dispatch]);
+
+  const expenses = expenseState.expenses || [];
 
   const filteredExpenses = expenses.filter(expense =>
-    expense.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expense.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    expense.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (expense.expenseNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (expense.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (expense.description || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredExpenses.length / parseInt(itemsPerPage));
@@ -131,6 +93,10 @@ const PurchaseExpenses = () => {
   const handleEdit = (expense: any) => {
     setSelectedExpense(expense);
     setIsEditDialogOpen(true);
+  };
+
+  const handleCreateExpense = (expense: any) => {
+    dispatch(createExpenseRequest(expense));
   };
 
   return (
@@ -187,98 +153,14 @@ const PurchaseExpenses = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Expense
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add Expense</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="category">Category</Label>
-                    <div className="flex gap-2">
-                      <Select>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="rent">Rent</SelectItem>
-                          <SelectItem value="utilities">Utilities</SelectItem>
-                          <SelectItem value="transport">Transport</SelectItem>
-                          <SelectItem value="salaries">Salaries</SelectItem>
-                          <SelectItem value="marketing">Marketing</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsCreateCategoryDialogOpen(true)}
-                        className="px-3"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="amount">Amount</Label>
-                    <Input id="amount" type="number" placeholder="Enter amount" />
-                  </div>
-                  <div>
-                    <Label htmlFor="date">Date</Label>
-                    <Input id="date" type="date" />
-                  </div>
-                  <div>
-                    <Label htmlFor="payment-method">Payment Method</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                        <SelectItem value="credit-card">Credit Card</SelectItem>
-                        <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="neft">NEFT</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="account">Account</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select account" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="hdfc">HDFC XXX3652</SelectItem>
-                        <SelectItem value="sbi">SBI XXX7845</SelectItem>
-                        <SelectItem value="visa">Visa XXX6365</SelectItem>
-                        <SelectItem value="cash">Cash</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" placeholder="Enter expense description..." />
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button>
-                    Save Expense
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <AddExpenseDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            onCreateCategory={() => setIsCreateCategoryDialogOpen(true)}
+            onCreateExpense={handleCreateExpense}
+            loading={expenseState.loading}
+            error={expenseState.error}
+          />
         </div>
       </div>
 

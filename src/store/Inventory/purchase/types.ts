@@ -25,6 +25,21 @@ export enum OperationType {
   Delete = "Delete"
 }
 
+export enum ExpenseCategory {
+  Rent = "Rent",
+  Utilities = "Utilities",
+  Transport = "Transport",
+  Salaries = "Salaries",
+  Marketing = "Marketing"
+}
+
+export enum BankPaymentMethod {
+  BankTransfer = "BankTransfer",
+  CreditCard = "CreditCard",
+  Cash = "Cash",
+  NEFT = "NEFT"
+}
+
 // Child DTOs
 export interface PurchaseOrderItemDTO {
   itemName: string;
@@ -75,4 +90,23 @@ export interface PurchaseOrderDto {
 
   items: PurchaseOrderItemDTO[];
   attachments: PurchaseOrderAttachmentDTO[];
+}
+
+export interface ExpenseDto {
+  expenseId: number;
+  expenseNumber: string;
+  category: ExpenseCategory;
+  amount: number;
+  date: string; // ISO string
+  paymentMethod: BankPaymentMethod;
+  account: string;
+  description: string;
+  operationType: OperationType;
+}
+
+export interface ExpenseState {
+  expenses: ExpenseDto[];
+  loading: boolean;
+  error: string | null;
+  stageCompleted: boolean;
 }
