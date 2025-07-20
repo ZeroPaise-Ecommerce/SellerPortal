@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,24 +7,144 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
+import { Customer } from "@/store/Inventory/customer/types";
+import { useDispatch } from "react-redux";
+import { createCustomerRequest, deleteCustomerBankingRequest, deleteCustomerContactRequest } from "@/store/Inventory/customer/actions";
 
 interface AddCustomerFormProps {
-  customer?: any;
+  customer?: Customer | null;
   isEdit?: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormProps) => {
+const AddCustomerForm = ({ customer, isEdit = false, onClose, onSuccess }: AddCustomerFormProps) => {
   const [activeTab, setActiveTab] = useState("general");
   const [copyBillingToShipping, setCopyBillingToShipping] = useState(false);
-  const [bankAccounts, setBankAccounts] = useState([{ id: 1 }]);
-  const [contactPersons, setContactPersons] = useState([{ id: 1 }]);
+  const [bankAccounts, setBankAccounts] = useState<Array<{ id: number; [key: string]: any }>>([{ id: 1 }]);
+  const [contactPersons, setContactPersons] = useState<Array<{ id: number; [key: string]: any }>>([{ id: 1 }]);
+
+  // Get dispatch function
+  const dispatch = useDispatch();
+
+  // Form state
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    emailAddress: "",
+    nickName: "",
+    companyName: "",
+    mobileNumber: "",
+    currency: "INR",
+    gstin: "",
+    pan: "",
+    designation: "",
+    heading: "",
+    comments: "",
+    // Billing Address
+    billingAddressLine1: "",
+    billingAddressLine2: "",
+    billingCity: "",
+    billingPincode: "",
+    billingState: "",
+    billingCountry: "India",
+    // Shipping Address
+    shippingAddressLine1: "",
+    shippingAddressLine2: "",
+    shippingCity: "",
+    shippingPincode: "",
+    shippingState: "",
+    shippingCountry: "India",
+  });
+
+  // Initialize form data when customer prop changes
+  useEffect(() => {
+    if (customer && isEdit) {
+      setFormData({
+        firstName: customer.firstName || "",
+        lastName: customer.lastName || "",
+        emailAddress: customer.emailAddress || "",
+        nickName: customer.nickName || "",
+        companyName: customer.companyName || "",
+        mobileNumber: customer.mobileNumber || "",
+        currency: customer.currency || "INR",
+        gstin: customer.gstin || "",
+        pan: customer.pan || "",
+        designation: customer.designation || "",
+        heading: customer.heading || "",
+        comments: customer.comments || "",
+        // Billing Address - get from addresses array
+        billingAddressLine1: customer.addresses?.find(addr => addr.addressType === 0)?.addressLine1 || "",
+        billingAddressLine2: customer.addresses?.find(addr => addr.addressType === 0)?.addressLine2 || "",
+        billingCity: customer.addresses?.find(addr => addr.addressType === 0)?.city || "",
+        billingPincode: customer.addresses?.find(addr => addr.addressType === 0)?.pinCode || "",
+        billingState: customer.addresses?.find(addr => addr.addressType === 0)?.state || "",
+        billingCountry: customer.addresses?.find(addr => addr.addressType === 0)?.country || "India",
+        // Shipping Address - get from addresses array
+        shippingAddressLine1: customer.addresses?.find(addr => addr.addressType === 1)?.addressLine1 || "",
+        shippingAddressLine2: customer.addresses?.find(addr => addr.addressType === 1)?.addressLine2 || "",
+        shippingCity: customer.addresses?.find(addr => addr.addressType === 1)?.city || "",
+        shippingPincode: customer.addresses?.find(addr => addr.addressType === 1)?.pinCode || "",
+        shippingState: customer.addresses?.find(addr => addr.addressType === 1)?.state || "",
+        shippingCountry: customer.addresses?.find(addr => addr.addressType === 1)?.country || "India",
+      });
+
+      // Initialize bank accounts from customer data
+      if (customer.bankingDetails && customer.bankingDetails.length > 0) {
+        setBankAccounts(customer.bankingDetails.map((bank, index) => {
+          const { id, ...bankData } = bank;
+          return { id: index + 1, ...bankData };
+        }));
+      }
+
+      // Initialize contact persons from customer data
+      if (customer.contactDetails && customer.contactDetails.length > 0) {
+        setContactPersons(customer.contactDetails.map((contact, index) => {
+          const { id, ...contactData } = contact;
+          return { id: index + 1, ...contactData };
+        }));
+      }
+    }
+  }, [customer, isEdit]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleBankAccountChange = (accountId: number, field: string, value: string) => {
+    setBankAccounts(prev => prev.map(account => 
+      account.id === accountId 
+        ? { ...account, [field]: value }
+        : account
+    ));
+  };
+
+  const handleContactPersonChange = (personId: number, field: string, value: string) => {
+    setContactPersons(prev => prev.map(person => 
+      person.id === personId 
+        ? { ...person, [field]: value }
+        : person
+    ));
+  };
 
   const addBankAccount = () => {
     setBankAccounts([...bankAccounts, { id: bankAccounts.length + 1 }]);
   };
 
   const removeBankAccount = (id: number) => {
+    // Find the account to be removed
+    const account = bankAccounts.find(acc => acc.id === id);
+    // If the account has a real backend id, dispatch delete
+    if (account && account.id && account.id !== 1 && account.id !== undefined && customer && customer.bankingDetails) {
+      // Try to find the matching backend id by index
+      const backendAccount = customer.bankingDetails.find((b, idx) => idx + 1 === id);
+      if (backendAccount && backendAccount.id && backendAccount.id !== "00000000-0000-0000-0000-000000000000") {
+        dispatch(deleteCustomerBankingRequest(backendAccount.id));
+      }
+    }
     setBankAccounts(bankAccounts.filter(acc => acc.id !== id));
   };
 
@@ -33,14 +153,106 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
   };
 
   const removeContactPerson = (id: number) => {
+    // Find the contact to be removed
+    const contact = contactPersons.find(person => person.id === id);
+    // If the contact has a real backend id, dispatch delete
+    if (contact && contact.id && contact.id !== 1 && contact.id !== undefined && customer && customer.contactDetails) {
+      // Try to find the matching backend id by index
+      const backendContact = customer.contactDetails.find((c, idx) => idx + 1 === id);
+      if (backendContact && backendContact.id && backendContact.id !== "00000000-0000-0000-0000-000000000000") {
+        dispatch(deleteCustomerContactRequest(backendContact.id));
+      }
+    }
     setContactPersons(contactPersons.filter(person => person.id !== id));
   };
 
   const handleCopyBillingAddress = () => {
     if (copyBillingToShipping) {
-      // Copy billing address to shipping address
-      console.log("Copying billing address to shipping address");
+      setFormData(prev => ({
+        ...prev,
+        shippingAddressLine1: prev.billingAddressLine1,
+        shippingAddressLine2: prev.billingAddressLine2,
+        shippingCity: prev.billingCity,
+        shippingPincode: prev.billingPincode,
+        shippingState: prev.billingState,
+        shippingCountry: prev.billingCountry,
+      }));
     }
+  };
+
+  const handleSubmit = () => {
+    // Prepare the payload according to the API structure
+    const payload = {
+      customerId: customer?.customerId || 0,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      emailAddress: formData.emailAddress,
+      mobileNumber: formData.mobileNumber,
+      companyName: formData.companyName,
+      nickName: formData.nickName,
+      gstin: formData.gstin,
+      pan: formData.pan,
+      currency: formData.currency,
+      designation: formData.designation,
+      heading: formData.heading,
+      comments: formData.comments,
+      addresses: [
+        {
+          id: customer?.addresses?.[0]?.id || "00000000-0000-0000-0000-000000000000",
+          customerId: customer?.customerId || 0,
+          country: formData.billingCountry,
+          addressLine1: formData.billingAddressLine1,
+          addressLine2: formData.billingAddressLine2,
+          city: formData.billingCity,
+          state: formData.billingState,
+          pinCode: formData.billingPincode,
+          addressType: 0 // 0 for billing
+        },
+        {
+          id: customer?.addresses?.[1]?.id || "00000000-0000-0000-0000-000000000000",
+          customerId: customer?.customerId || 0,
+          country: formData.shippingCountry,
+          addressLine1: formData.shippingAddressLine1,
+          addressLine2: formData.shippingAddressLine2,
+          city: formData.shippingCity,
+          state: formData.shippingState,
+          pinCode: formData.shippingPincode,
+          addressType: 1 // 1 for shipping
+        }
+      ],
+      bankingDetails: bankAccounts.map((account, index) => ({
+        id: customer?.bankingDetails?.[index]?.id || "00000000-0000-0000-0000-000000000000",
+        customerId: customer?.customerId || 0,
+        accountHolderName: account.accountHolderName || "",
+        accountNumber: account.accountNumber || "",
+        reAccountNumber: account.reEnterAccountNumber || "",
+        ifsc: account.ifsc || "",
+        bankName: account.bankName || "",
+        remarks: account.remarks || ""
+      })),
+      contactDetails: contactPersons.map((contact, index) => ({
+        id: customer?.contactDetails?.[index]?.id || "00000000-0000-0000-0000-000000000000",
+        customerId: customer?.customerId || 0,
+        firstName: contact.firstName || "",
+        lastName: contact.lastName || "",
+        mobileNumber: contact.mobileNumber || "",
+        workPhone: contact.workPhone || "",
+        emailAddress: contact.emailAddress || "",
+        remarks: contact.remarks || ""
+      }))
+    };
+
+    console.log("Submitting customer payload:", payload);
+    
+    // Dispatch the create customer request action
+    dispatch(createCustomerRequest(payload as unknown as Customer));
+    
+    // Call onSuccess callback if provided
+    if (onSuccess) {
+      onSuccess();
+    }
+    
+    onClose();
   };
 
   const tabsList = [
@@ -67,31 +279,56 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">First Name *</label>
-              <Input placeholder="Enter first name" defaultValue={customer?.firstName} />
+              <Input 
+                placeholder="Enter first name" 
+                value={formData.firstName}
+                onChange={(e) => handleInputChange("firstName", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Last Name *</label>
-              <Input placeholder="Enter last name" defaultValue={customer?.lastName} />
+              <Input 
+                placeholder="Enter last name" 
+                value={formData.lastName}
+                onChange={(e) => handleInputChange("lastName", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Email Address *</label>
-              <Input type="email" placeholder="Enter email address" defaultValue={customer?.email} />
+              <Input 
+                type="email" 
+                placeholder="Enter email address" 
+                value={formData.emailAddress}
+                onChange={(e) => handleInputChange("emailAddress", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Nick Name</label>
-              <Input placeholder="Enter nick name" defaultValue={customer?.nickName} />
+              <Input 
+                placeholder="Enter nick name" 
+                value={formData.nickName}
+                onChange={(e) => handleInputChange("nickName", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Company Name</label>
-              <Input placeholder="Enter company name" defaultValue={customer?.company} />
+              <Input 
+                placeholder="Enter company name" 
+                value={formData.companyName}
+                onChange={(e) => handleInputChange("companyName", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Mobile Number *</label>
-              <Input placeholder="Enter mobile number" defaultValue={customer?.phone} />
+              <Input 
+                placeholder="Enter mobile number" 
+                value={formData.mobileNumber}
+                onChange={(e) => handleInputChange("mobileNumber", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Currency</label>
-              <Select defaultValue="INR">
+              <Select value={formData.currency} onValueChange={(value) => handleInputChange("currency", value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -104,15 +341,27 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">GSTIN</label>
-              <Input placeholder="Enter GSTIN" />
+              <Input 
+                placeholder="Enter GSTIN" 
+                value={formData.gstin}
+                onChange={(e) => handleInputChange("gstin", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">PAN</label>
-              <Input placeholder="Enter PAN" />
+              <Input 
+                placeholder="Enter PAN" 
+                value={formData.pan}
+                onChange={(e) => handleInputChange("pan", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Designation</label>
-              <Input placeholder="Enter designation" />
+              <Input 
+                placeholder="Enter designation" 
+                value={formData.designation}
+                onChange={(e) => handleInputChange("designation", e.target.value)}
+              />
             </div>
           </div>
         </TabsContent>
@@ -126,23 +375,39 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Address Line 1 *</label>
-                  <Input placeholder="Enter address line 1" />
+                  <Input 
+                    placeholder="Enter address line 1" 
+                    value={formData.billingAddressLine1}
+                    onChange={(e) => handleInputChange("billingAddressLine1", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Address Line 2</label>
-                  <Input placeholder="Enter address line 2" />
+                  <Input 
+                    placeholder="Enter address line 2" 
+                    value={formData.billingAddressLine2}
+                    onChange={(e) => handleInputChange("billingAddressLine2", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">City *</label>
-                  <Input placeholder="Enter city" />
+                  <Input 
+                    placeholder="Enter city" 
+                    value={formData.billingCity}
+                    onChange={(e) => handleInputChange("billingCity", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Pincode *</label>
-                  <Input placeholder="Enter pincode" />
+                  <Input 
+                    placeholder="Enter pincode" 
+                    value={formData.billingPincode}
+                    onChange={(e) => handleInputChange("billingPincode", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">State *</label>
-                  <Select>
+                  <Select value={formData.billingState} onValueChange={(value) => handleInputChange("billingState", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select state" />
                     </SelectTrigger>
@@ -155,14 +420,14 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Country *</label>
-                  <Select defaultValue="india">
+                  <Select value={formData.billingCountry} onValueChange={(value) => handleInputChange("billingCountry", value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="india">India</SelectItem>
-                      <SelectItem value="usa">USA</SelectItem>
-                      <SelectItem value="uk">UK</SelectItem>
+                      <SelectItem value="India">India</SelectItem>
+                      <SelectItem value="USA">USA</SelectItem>
+                      <SelectItem value="UK">UK</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -187,23 +452,47 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Address Line 1 *</label>
-                  <Input placeholder="Enter address line 1" disabled={copyBillingToShipping} />
+                  <Input 
+                    placeholder="Enter address line 1" 
+                    disabled={copyBillingToShipping}
+                    value={formData.shippingAddressLine1}
+                    onChange={(e) => handleInputChange("shippingAddressLine1", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Address Line 2</label>
-                  <Input placeholder="Enter address line 2" disabled={copyBillingToShipping} />
+                  <Input 
+                    placeholder="Enter address line 2" 
+                    disabled={copyBillingToShipping}
+                    value={formData.shippingAddressLine2}
+                    onChange={(e) => handleInputChange("shippingAddressLine2", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">City *</label>
-                  <Input placeholder="Enter city" disabled={copyBillingToShipping} />
+                  <Input 
+                    placeholder="Enter city" 
+                    disabled={copyBillingToShipping}
+                    value={formData.shippingCity}
+                    onChange={(e) => handleInputChange("shippingCity", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Pincode *</label>
-                  <Input placeholder="Enter pincode" disabled={copyBillingToShipping} />
+                  <Input 
+                    placeholder="Enter pincode" 
+                    disabled={copyBillingToShipping}
+                    value={formData.shippingPincode}
+                    onChange={(e) => handleInputChange("shippingPincode", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">State *</label>
-                  <Select disabled={copyBillingToShipping}>
+                  <Select 
+                    value={formData.shippingState} 
+                    onValueChange={(value) => handleInputChange("shippingState", value)}
+                    disabled={copyBillingToShipping}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select state" />
                     </SelectTrigger>
@@ -216,14 +505,18 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Country *</label>
-                  <Select defaultValue="india" disabled={copyBillingToShipping}>
+                  <Select 
+                    value={formData.shippingCountry} 
+                    onValueChange={(value) => handleInputChange("shippingCountry", value)}
+                    disabled={copyBillingToShipping}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="india">India</SelectItem>
-                      <SelectItem value="usa">USA</SelectItem>
-                      <SelectItem value="uk">UK</SelectItem>
+                      <SelectItem value="India">India</SelectItem>
+                      <SelectItem value="USA">USA</SelectItem>
+                      <SelectItem value="UK">UK</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -260,27 +553,51 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Bank Name</label>
-                  <Input placeholder="Enter bank name" />
+                  <Input 
+                    placeholder="Enter bank name" 
+                    value={account.bankName || ""}
+                    onChange={(e) => handleBankAccountChange(account.id, "bankName", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Account Holder Name</label>
-                  <Input placeholder="Enter account holder name" />
+                  <Input 
+                    placeholder="Enter account holder name" 
+                    value={account.accountHolderName || ""}
+                    onChange={(e) => handleBankAccountChange(account.id, "accountHolderName", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Account Number</label>
-                  <Input placeholder="Enter account number" />
+                  <Input 
+                    placeholder="Enter account number" 
+                    value={account.accountNumber || ""}
+                    onChange={(e) => handleBankAccountChange(account.id, "accountNumber", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Re-enter Account Number</label>
-                  <Input placeholder="Re-enter account number" />
+                  <Input 
+                    placeholder="Re-enter account number" 
+                    value={account.reEnterAccountNumber || ""}
+                    onChange={(e) => handleBankAccountChange(account.id, "reEnterAccountNumber", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">IFSC Code</label>
-                  <Input placeholder="Enter IFSC code" />
+                  <Input 
+                    placeholder="Enter IFSC code" 
+                    value={account.ifsc || ""}
+                    onChange={(e) => handleBankAccountChange(account.id, "ifsc", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Remarks</label>
-                  <Input placeholder="Enter remarks" />
+                  <Input 
+                    placeholder="Enter remarks" 
+                    value={account.remarks || ""}
+                    onChange={(e) => handleBankAccountChange(account.id, "remarks", e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -315,27 +632,51 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">First Name</label>
-                  <Input placeholder="Enter first name" />
+                  <Input 
+                    placeholder="Enter first name" 
+                    value={person.firstName || ""}
+                    onChange={(e) => handleContactPersonChange(person.id, "firstName", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Last Name</label>
-                  <Input placeholder="Enter last name" />
+                  <Input 
+                    placeholder="Enter last name" 
+                    value={person.lastName || ""}
+                    onChange={(e) => handleContactPersonChange(person.id, "lastName", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Mobile Number</label>
-                  <Input placeholder="Enter mobile number" />
+                  <Input 
+                    placeholder="Enter mobile number" 
+                    value={person.mobileNumber || ""}
+                    onChange={(e) => handleContactPersonChange(person.id, "mobileNumber", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Email Address</label>
-                  <Input placeholder="Enter email address" />
+                  <Input 
+                    placeholder="Enter email address" 
+                    value={person.emailAddress || ""}
+                    onChange={(e) => handleContactPersonChange(person.id, "emailAddress", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Work Phone</label>
-                  <Input placeholder="Enter work phone" />
+                  <Input 
+                    placeholder="Enter work phone" 
+                    value={person.workPhone || ""}
+                    onChange={(e) => handleContactPersonChange(person.id, "workPhone", e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Remarks</label>
-                  <Input placeholder="Enter remarks" />
+                  <Input 
+                    placeholder="Enter remarks" 
+                    value={person.remarks || ""}
+                    onChange={(e) => handleContactPersonChange(person.id, "remarks", e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -347,11 +688,20 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Heading</label>
-              <Input placeholder="Enter heading" />
+              <Input 
+                placeholder="Enter heading" 
+                value={formData.heading}
+                onChange={(e) => handleInputChange("heading", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Comments</label>
-              <Textarea placeholder="Enter comments" rows={6} />
+              <Textarea 
+                placeholder="Enter comments" 
+                rows={6}
+                value={formData.comments}
+                onChange={(e) => handleInputChange("comments", e.target.value)}
+              />
             </div>
           </div>
         </TabsContent>
@@ -360,7 +710,7 @@ const AddCustomerForm = ({ customer, isEdit = false, onClose }: AddCustomerFormP
       <div className="flex justify-end gap-3 pt-4 border-t">
         <Button variant="outline" onClick={onClose}>Cancel</Button>
         <Button variant="outline">Next</Button>
-        <Button>{isEdit ? "Update" : "Save"} Customer</Button>
+        <Button onClick={handleSubmit}>{isEdit ? "Update" : "Save"} Customer</Button>
       </div>
     </div>
   );
