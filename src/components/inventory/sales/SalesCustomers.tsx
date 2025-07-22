@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,9 +33,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Search, Plus, Filter, Eye, Edit, Users, TrendingUp, ShoppingCart } from "lucide-react";
+import { Search, Plus, Filter, Eye, Edit, Users, TrendingUp, ShoppingCart, Loader2 } from "lucide-react";
 import AddCustomerForm from "./AddCustomerForm";
 import ViewCustomerDetails from "./ViewCustomerDetails";
+import { useCustomer } from "@/hooks/useCustomer";
+import { Customer } from "@/store/Inventory/customer/types";
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -52,67 +54,36 @@ const SalesCustomers = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
-  const customers = [
-    {
-      id: "C1001",
-      name: "Rahul Sharma",
-      email: "rahul.sharma@example.com",
-      phone: "+91 98765 43210",
-      company: "Tech Solutions Pvt Ltd",
-      totalOrders: 12,
-      totalSpent: 245678,
-      lastOrder: "15-Jun-2023",
-      status: "Active"
-    },
-    {
-      id: "C1002",
-      name: "Priya Patel",
-      email: "priya.p@example.com",
-      phone: "+91 87654 32109",
-      company: "Digital Marketing Co",
-      totalOrders: 8,
-      totalSpent: 134550,
-      lastOrder: "10-Jun-2023",
-      status: "Active"
-    },
-    {
-      id: "C1003",
-      name: "Amit Kumar",
-      email: "amit.k@example.com",
-      phone: "+91 76543 21098",
-      company: "Retail Express",
-      totalOrders: 5,
-      totalSpent: 87625,
-      lastOrder: "28-May-2023",
-      status: "Inactive"
-    },
-    {
-      id: "C1004",
-      name: "Deepa Singh",
-      email: "deepa.s@example.com",
-      phone: "+91 65432 10987",
-      company: "Fashion Hub",
-      totalOrders: 15,
-      totalSpent: 324599,
-      lastOrder: "12-Jun-2023",
-      status: "Active"
-    },
-    {
-      id: "C1005",
-      name: "Vikram Reddy",
-      email: "vikram.r@example.com",
-      phone: "+91 54321 09876",
-      company: "Electronics World",
-      totalOrders: 3,
-      totalSpent: 42075,
-      lastOrder: "20-May-2023",
-      status: "Active"
-    },
-  ];
+  // Use the customer hook to get data from Redux store
+  const { customers, loading, error, getCustomers } = useCustomer();
 
-  const filteredCustomers = customers.filter(customer =>
+  // Fetch customers on component mount
+  useEffect(() => {
+    getCustomers();
+  }, [getCustomers]);
+
+  // Handle successful customer creation/update
+  const handleCustomerSuccess = () => {
+    // Refresh the customer list
+    getCustomers();
+  };
+
+  // Transform the API customer data to match the component's expected format
+  const transformedCustomers = customers.filter(f => f.firstName != undefined).map(customer => ({
+    id: customer.id,
+    name: `${customer.firstName} ${customer.lastName}`,
+    email: customer.emailAddress,
+    phone: customer.mobileNumber,
+    company: customer.companyName,
+    totalOrders: 0, // This would need to come from orders API
+    totalSpent: 0, // This would need to come from orders API
+    lastOrder: "", // This would need to come from orders API
+    status: "Active" // This would need to come from customer status field
+  }));
+
+  const filteredCustomers = transformedCustomers.filter(customer =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.company.toLowerCase().includes(searchTerm.toLowerCase())
@@ -124,19 +95,49 @@ const SalesCustomers = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentItems = filteredCustomers.slice(startIndex, endIndex);
 
-  const totalCustomers = customers.length;
-  const activeCustomers = customers.filter(c => c.status === "Active").length;
-  const totalRevenue = customers.reduce((sum, customer) => sum + customer.totalSpent, 0);
+  const totalCustomers = transformedCustomers.length;
+  const activeCustomers = customers.length; // Assuming all customers are active for now
+  const totalRevenue = 0; // This would need to come from orders API
 
   const handleView = (customer: any) => {
-    setSelectedCustomer(customer);
+    // Find the original customer data from the API response
+    const originalCustomer = customers.find(c => c.id === customer.id);
+    setSelectedCustomer(originalCustomer || null);
     setIsViewModalOpen(true);
   };
 
   const handleEdit = (customer: any) => {
-    setSelectedCustomer(customer);
+    // Find the original customer data from the API response
+    const originalCustomer = customers.find(c => c.id === customer.id);
+    setSelectedCustomer(originalCustomer || null);
     setIsEditModalOpen(true);
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+          <span className="text-gray-600">Loading customers...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading customers: {error}</p>
+          <Button onClick={() => getCustomers()} variant="outline">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -171,7 +172,7 @@ const SalesCustomers = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-900">
-              {formatIndianCurrency(totalRevenue / customers.reduce((sum, c) => sum + c.totalOrders, 0))}
+              {formatIndianCurrency(totalRevenue / Math.max(1, customers.reduce((sum, c) => sum + 0, 0)))}
             </div>
             <p className="text-xs text-purple-600 mt-1">Per order average</p>
           </CardContent>
@@ -209,7 +210,7 @@ const SalesCustomers = () => {
               <DialogHeader>
                 <DialogTitle>Add New Customer</DialogTitle>
               </DialogHeader>
-              <AddCustomerForm onClose={() => setIsCreateModalOpen(false)} />
+              <AddCustomerForm onClose={() => setIsCreateModalOpen(false)} onSuccess={handleCustomerSuccess} />
             </DialogContent>
           </Dialog>
         </div>
@@ -234,53 +235,55 @@ const SalesCustomers = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {currentItems.map((customer, index) => (
-                  <TableRow 
-                    key={customer.id}
-                    className={`hover:bg-blue-50 transition-colors duration-150 ${
-                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                    }`}
-                  >
-                    <TableCell className="font-medium text-blue-600 py-4">{customer.name}</TableCell>
-                    <TableCell className="text-gray-700">{customer.email}</TableCell>
-                    <TableCell className="text-gray-700">{customer.phone}</TableCell>
-                    <TableCell className="text-gray-700">{customer.company}</TableCell>
-                    <TableCell className="text-right font-medium">{customer.totalOrders}</TableCell>
-                    <TableCell className="text-right font-semibold text-gray-900">
-                      {formatIndianCurrency(customer.totalSpent)}
-                    </TableCell>
-                    <TableCell className="text-gray-700">{customer.lastOrder}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
-                        customer.status === "Active" 
-                          ? "bg-green-100 text-green-800 border-green-200" 
-                          : "bg-red-100 text-red-800 border-red-200"
-                      }`}>
-                        {customer.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-center gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
-                          onClick={() => handleView(customer)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-600"
-                          onClick={() => handleEdit(customer)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {currentItems.map((customer, index) =>
+                  (customer !== undefined) && (
+                    <TableRow 
+                      key={customer.id}
+                      className={`hover:bg-blue-50 transition-colors duration-150 ${
+                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                      }`}
+                    >
+                      <TableCell className="font-medium text-blue-600 py-4">{customer.name}</TableCell>
+                      <TableCell className="text-gray-700">{customer.email}</TableCell>
+                      <TableCell className="text-gray-700">{customer.phone}</TableCell>
+                      <TableCell className="text-gray-700">{customer.company}</TableCell>
+                      <TableCell className="text-right font-medium">{customer.totalOrders}</TableCell>
+                      <TableCell className="text-right font-semibold text-gray-900">
+                        {formatIndianCurrency(customer.totalSpent)}
+                      </TableCell>
+                      <TableCell className="text-gray-700">{customer.lastOrder}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
+                          customer.status === "Active" 
+                            ? "bg-green-100 text-green-800 border-green-200" 
+                            : "bg-red-100 text-red-800 border-red-200"
+                        }`}>
+                          {customer.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
+                            onClick={() => handleView(customer)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-600"
+                            onClick={() => handleEdit(customer)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                )}
               </TableBody>
             </Table>
           </div>
@@ -366,6 +369,7 @@ const SalesCustomers = () => {
               customer={selectedCustomer}
               isEdit={true}
               onClose={() => setIsEditModalOpen(false)} 
+              onSuccess={handleCustomerSuccess}
             />
           )}
         </DialogContent>

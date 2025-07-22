@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +27,9 @@ import {
 import { Search, Plus, Eye, Edit, CheckCircle2, Clock, FileText, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import useAppDispatch from "@/hooks/useAppDispatch";
+import useAppSelector from "@/hooks/useAppSelector";
+import { getPurchaseOrderRequest } from "@/store/Inventory/purchase/actions";
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -71,59 +73,12 @@ const PurchaseOrdersTable = ({ onCreatePO, onViewPO, onEditPO }: PurchaseOrdersT
   const [searchTerm, setSearchTerm] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState("10");
   const [currentPage, setCurrentPage] = useState(1);
+  const dispatch = useAppDispatch();
+  const orders = useAppSelector((state: any) => state.purchase?.purchareOrders || []);
 
-  const orders = [
-    {
-      id: "PO-1001",
-      date: "15-Jun-2023",
-      supplierName: "Tata Steel Limited",
-      status: "Sent",
-      received: "Yes",
-      billStatus: "Paid",
-      deliveryOn: "25-Jun-2023",
-      amount: 245990
-    },
-    {
-      id: "PO-1002",
-      date: "10-Jun-2023",
-      supplierName: "Reliance Industries Ltd.",
-      status: "Draft",
-      received: "No",
-      billStatus: "Unpaid",
-      deliveryOn: "20-Jun-2023",
-      amount: 184500
-    },
-    {
-      id: "PO-1003",
-      date: "05-Jun-2023",
-      supplierName: "Infosys Limited",
-      status: "Sent",
-      received: "Partial",
-      billStatus: "Partial",
-      deliveryOn: "15-Jun-2023",
-      amount: 92750
-    },
-    {
-      id: "PO-1004",
-      date: "01-Jun-2023",
-      supplierName: "Mahindra & Mahindra",
-      status: "Sent",
-      received: "Yes",
-      billStatus: "Paid",
-      deliveryOn: "10-Jun-2023",
-      amount: 156990
-    },
-    {
-      id: "PO-1005",
-      date: "28-May-2023",
-      supplierName: "Asian Paints Ltd.",
-      status: "Draft",
-      received: "No",
-      billStatus: "Unpaid",
-      deliveryOn: "07-Jun-2023",
-      amount: 78500
-    },
-  ];
+  useEffect(() => {
+    dispatch(getPurchaseOrderRequest());
+  }, [dispatch]);
 
   const filteredOrders = orders.filter(order =>
     order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -229,7 +184,7 @@ const PurchaseOrdersTable = ({ onCreatePO, onViewPO, onEditPO }: PurchaseOrdersT
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                     }`}
                   >
-                    <TableCell className="py-4 text-gray-700">{order.date}</TableCell>
+                    <TableCell className="py-4 text-gray-700">{order.all}</TableCell>
                     <TableCell className="font-medium text-blue-600">{order.id}</TableCell>
                     <TableCell className="text-gray-700">{order.supplierName}</TableCell>
                     <TableCell>{getStatusBadge(order.status)}</TableCell>
@@ -244,7 +199,7 @@ const PurchaseOrdersTable = ({ onCreatePO, onViewPO, onEditPO }: PurchaseOrdersT
                         {order.billStatus}
                       </span>
                     </TableCell>
-                    <TableCell className="text-gray-700">{order.deliveryOn}</TableCell>
+                    <TableCell className="text-gray-700">{order.expectedDeliveryDate}</TableCell>
                     <TableCell className="text-right font-semibold text-gray-900">
                       {formatIndianCurrency(order.amount)}
                     </TableCell>
