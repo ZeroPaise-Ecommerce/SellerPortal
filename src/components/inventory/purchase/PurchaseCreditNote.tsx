@@ -126,6 +126,21 @@ const PurchaseCreditNote = () => {
     setIsEditDialogOpen(true);
   };
 
+  const [createForm, setCreateForm] = useState({
+    supplier: "",
+    bill: "",
+    date: "",
+    reason: "",
+    notes: "",
+  });
+  const [errors, setErrors] = useState({
+    supplier: false,
+    bill: false,
+    date: false,
+    reason: false,
+    notes: false,
+  });
+
   return (
     <div className="space-y-6">
       {/* Header Stats */}
@@ -196,88 +211,111 @@ const PurchaseCreditNote = () => {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="supplier">Supplier Name</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Label htmlFor="supplier">Supplier Name <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={createForm.supplier}
+                      onValueChange={value => setCreateForm({ ...createForm, supplier: value })}
+                    >
+                      <SelectTrigger className={errors.supplier ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="reliance">Reliance Industries Ltd.</SelectItem>
-                        <SelectItem value="infosys">Infosys Limited</SelectItem>
-                        <SelectItem value="asian">Asian Paints Ltd.</SelectItem>
+                        <SelectItem value="Reliance Industries Ltd.">Reliance Industries Ltd.</SelectItem>
+                        <SelectItem value="Infosys Limited">Infosys Limited</SelectItem>
+                        <SelectItem value="Asian Paints Ltd.">Asian Paints Ltd.</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.supplier && (
+                      <span className="text-xs text-red-500">Supplier is required</span>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="bill-id">Related Bill</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Label htmlFor="bill-id">Related Bill <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={createForm.bill}
+                      onValueChange={value => setCreateForm({ ...createForm, bill: value })}
+                    >
+                      <SelectTrigger className={errors.bill ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select bill" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="bill1">BILL-1001</SelectItem>
-                        <SelectItem value="bill2">BILL-1002</SelectItem>
-                        <SelectItem value="bill3">BILL-1003</SelectItem>
+                        <SelectItem value="BILL-1001">BILL-1001</SelectItem>
+                        <SelectItem value="BILL-1002">BILL-1002</SelectItem>
+                        <SelectItem value="BILL-1003">BILL-1003</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.bill && (
+                      <span className="text-xs text-red-500">Related bill is required</span>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="date">Date</Label>
-                    <Input id="date" type="date" />
+                    <Label htmlFor="date">Date <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={createForm.date}
+                      onChange={e => setCreateForm({ ...createForm, date: e.target.value })}
+                      className={errors.date ? "border-red-500" : ""}
+                    />
+                    {errors.date && (
+                      <span className="text-xs text-red-500">Date is required</span>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="reason">Credit Reason</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Label htmlFor="reason">Credit Reason <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={createForm.reason}
+                      onValueChange={value => setCreateForm({ ...createForm, reason: value })}
+                    >
+                      <SelectTrigger className={errors.reason ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select reason" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="defective">Defective Items Return</SelectItem>
-                        <SelectItem value="price-adjustment">Price Adjustment</SelectItem>
-                        <SelectItem value="damaged">Return of Damaged Goods</SelectItem>
-                        <SelectItem value="quantity">Quantity Correction</SelectItem>
-                        <SelectItem value="overcharge">Overcharge Correction</SelectItem>
+                        <SelectItem value="Defective Items Return">Defective Items Return</SelectItem>
+                        <SelectItem value="Price Adjustment">Price Adjustment</SelectItem>
+                        <SelectItem value="Return of Damaged Goods">Return of Damaged Goods</SelectItem>
+                        <SelectItem value="Quantity Correction">Quantity Correction</SelectItem>
+                        <SelectItem value="Overcharge Correction">Overcharge Correction</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.reason && (
+                      <span className="text-xs text-red-500">Reason is required</span>
+                    )}
                   </div>
                 </div>
-
                 <div>
-                  <Label>Credit Items</Label>
-                  <div className="mt-2 border rounded-lg">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Item</TableHead>
-                          <TableHead>Quantity</TableHead>
-                          <TableHead>Unit Price</TableHead>
-                          <TableHead>Total</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell>Sample Item 1</TableCell>
-                          <TableCell>
-                            <Input type="number" defaultValue="2" className="w-20" />
-                          </TableCell>
-                          <TableCell>₹100.00</TableCell>
-                          <TableCell>₹200.00</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </div>
+                  <Label htmlFor="notes">Notes <span className="text-red-500">*</span></Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Add credit note details..."
+                    value={createForm.notes}
+                    onChange={e => setCreateForm({ ...createForm, notes: e.target.value })}
+                    className={errors.notes ? "border-red-500" : ""}
+                  />
+                  {errors.notes && (
+                    <span className="text-xs text-red-500">Notes are required</span>
+                  )}
                 </div>
-
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea id="notes" placeholder="Add credit note details..." />
-                </div>
-
                 <div className="flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button>
+                  <Button
+                    onClick={() => {
+                      // Validate required fields
+                      const newErrors = {
+                        supplier: !createForm.supplier,
+                        bill: !createForm.bill,
+                        date: !createForm.date,
+                        reason: !createForm.reason,
+                        notes: !createForm.notes,
+                      };
+                      setErrors(newErrors);
+                      if (Object.values(newErrors).some(Boolean)) return;
+                      // ...submit logic here
+                      setIsCreateDialogOpen(false);
+                    }}
+                  >
                     Create Credit Note
                   </Button>
                 </div>

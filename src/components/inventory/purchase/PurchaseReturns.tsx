@@ -73,6 +73,24 @@ const PurchaseReturns = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState<any>(null);
 
+  const [createForm, setCreateForm] = useState({
+    supplier: "",
+    poID: "",
+    returnDate: "",
+    reason: "",
+    items: [],
+    notes: "",
+  });
+
+  const [errors, setErrors] = useState({
+    supplier: false,
+    poID: false,
+    returnDate: false,
+    reason: false,
+    items: false,
+    notes: false,
+  });
+
   const returns = [
     {
       id: "PR-1001",
@@ -214,9 +232,12 @@ const PurchaseReturns = () => {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="supplier">Supplier Name</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Label htmlFor="supplier">Supplier Name <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={createForm.supplier}
+                      onValueChange={value => setCreateForm({ ...createForm, supplier: value })}
+                    >
+                      <SelectTrigger className={errors.supplier ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
@@ -225,37 +246,61 @@ const PurchaseReturns = () => {
                         <SelectItem value="asian">Asian Paints Ltd.</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.supplier && (
+                      <span className="text-xs text-red-500">Supplier is required</span>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="po-id">Purchase Order ID</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Label htmlFor="po-id">Purchase Order ID <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={createForm.poID}
+                      onValueChange={value => setCreateForm({ ...createForm, poID: value })}
+                    >
+                      <SelectTrigger className={errors.poID ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select PO" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="po1">PO-1001</SelectItem>
-                        <SelectItem value="po2">PO-1002</SelectItem>
-                        <SelectItem value="po3">PO-1003</SelectItem>
+                        <SelectItem value="PO-1001">PO-1001</SelectItem>
+                        <SelectItem value="PO-1002">PO-1002</SelectItem>
+                        <SelectItem value="PO-1003">PO-1003</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.poID && (
+                      <span className="text-xs text-red-500">PO ID is required</span>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="return-date">Return Date</Label>
-                    <Input id="return-date" type="date" />
+                    <Label htmlFor="return-date">Return Date <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="return-date"
+                      type="date"
+                      value={createForm.returnDate}
+                      onChange={e => setCreateForm({ ...createForm, returnDate: e.target.value })}
+                      className={errors.returnDate ? "border-red-500" : ""}
+                    />
+                    {errors.returnDate && (
+                      <span className="text-xs text-red-500">Return date is required</span>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="reason">Return Reason</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Label htmlFor="reason">Return Reason <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={createForm.reason}
+                      onValueChange={value => setCreateForm({ ...createForm, reason: value })}
+                    >
+                      <SelectTrigger className={errors.reason ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select reason" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="defective">Defective Items</SelectItem>
-                        <SelectItem value="wrong-spec">Wrong Specifications</SelectItem>
-                        <SelectItem value="damaged">Damaged in Transit</SelectItem>
-                        <SelectItem value="excess">Excess Quantity</SelectItem>
+                        <SelectItem value="Defective Items">Defective Items</SelectItem>
+                        <SelectItem value="Wrong Specifications">Wrong Specifications</SelectItem>
+                        <SelectItem value="Damaged in Transit">Damaged in Transit</SelectItem>
+                        <SelectItem value="Excess Quantity">Excess Quantity</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.reason && (
+                      <span className="text-xs text-red-500">Reason is required</span>
+                    )}
                   </div>
                 </div>
 
@@ -288,15 +333,41 @@ const PurchaseReturns = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="notes">Return Notes</Label>
-                  <Textarea id="notes" placeholder="Add notes about the return..." />
+                  <Label htmlFor="notes">Return Notes <span className="text-red-500">*</span></Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Add notes about the return..."
+                    value={createForm.notes}
+                    onChange={e => setCreateForm({ ...createForm, notes: e.target.value })}
+                    className={errors.notes ? "border-red-500" : ""}
+                  />
+                  {errors.notes && (
+                    <span className="text-xs text-red-500">Notes are required</span>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button>
+                  <Button
+                    onClick={() => {
+                      // Validate required fields
+                      const newErrors = {
+                        supplier: !createForm.supplier,
+                        poID: !createForm.poID,
+                        returnDate: !createForm.returnDate,
+                        reason: !createForm.reason,
+                        items: false, // Not validating items for now
+                        notes: !createForm.notes,
+                      };
+                      setErrors(newErrors);
+                      // If any error, do not proceed
+                      if (Object.values(newErrors).some(Boolean)) return;
+                      // ...submit logic here
+                      setIsCreateDialogOpen(false);
+                    }}
+                  >
                     Create Return
                   </Button>
                 </div>

@@ -75,6 +75,32 @@ const PurchaseBills = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedBill, setSelectedBill] = useState<any>(null);
 
+  const [createForm, setCreateForm] = useState({
+    supplier: "",
+    poNumber: "",
+    billNumber: "",
+    date: "",
+    amount: "",
+    prNumber: "",
+    paymentTerms: "",
+    items: [],
+    notes: "",
+    document: null as File | null,
+  });
+
+  const [errors, setErrors] = useState({
+    supplier: false,
+    poNumber: false,
+    billNumber: false,
+    date: false,
+    amount: false,
+    prNumber: false,
+    paymentTerms: false,
+    items: false,
+    notes: false,
+    document: false,
+  });
+
   const bills = [
     {
       id: "BILL-1001",
@@ -147,6 +173,40 @@ const PurchaseBills = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleSaveDraft = () => {
+    const newErrors = {
+      supplier: !createForm.supplier,
+      poNumber: !createForm.poNumber,
+      billNumber: !createForm.billNumber,
+      date: !createForm.date,
+      amount: !createForm.amount,
+      prNumber: false,
+      paymentTerms: !createForm.paymentTerms,
+      items: false,
+      notes: false,
+      document: !createForm.document,
+    };
+    setErrors(newErrors);
+    console.log("Save Draft");
+  };
+
+  const handleSave = () => {
+    const newErrors = {
+      supplier: !createForm.supplier,
+      poNumber: !createForm.poNumber,
+      billNumber: !createForm.billNumber,
+      date: !createForm.date,
+      amount: !createForm.amount,
+      prNumber: false,
+      paymentTerms: !createForm.paymentTerms,
+      items: false,
+      notes: false,
+      document: !createForm.document,
+    };
+    setErrors(newErrors);
+    console.log("Save");
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Stats */}
@@ -198,7 +258,7 @@ const PurchaseBills = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search bills..."
-              className="pl-10 w-80 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+              className={`pl-10 w-80 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500 ${errors.supplier ? "border-red-500" : ""}`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -218,8 +278,14 @@ const PurchaseBills = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="supplier">Supplier Name</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={createForm.supplier}
+                      onValueChange={(value) => {
+                        setCreateForm(f => ({ ...f, supplier: value }));
+                        setErrors(e => ({ ...e, supplier: false }));
+                      }}
+                    >
+                      <SelectTrigger className={errors.supplier ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
@@ -228,11 +294,20 @@ const PurchaseBills = () => {
                         <SelectItem value="asian">Asian Paints Ltd.</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.supplier && (
+                      <p className="text-xs text-red-500 mt-1">Please select a supplier.</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="po-number">Purchase Order Number</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={createForm.poNumber}
+                      onValueChange={(value) => {
+                        setCreateForm(f => ({ ...f, poNumber: value }));
+                        setErrors(e => ({ ...e, poNumber: false }));
+                      }}
+                    >
+                      <SelectTrigger className={errors.poNumber ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select PO" />
                       </SelectTrigger>
                       <SelectContent>
@@ -241,15 +316,36 @@ const PurchaseBills = () => {
                         <SelectItem value="po3">PO-1003</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.poNumber && (
+                      <p className="text-xs text-red-500 mt-1">Please select a PO number.</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="bill-number">Bill Number</Label>
-                    <Input id="bill-number" placeholder="Enter bill number" />
+                    <Input
+                      id="bill-number"
+                      placeholder="Enter bill number"
+                      className={errors.billNumber ? "border-red-500" : ""}
+                      value={createForm.billNumber}
+                      onChange={e => {
+                        setCreateForm(f => ({ ...f, billNumber: e.target.value }));
+                        setErrors(e => ({ ...e, billNumber: false }));
+                      }}
+                    />
+                    {errors.billNumber && (
+                      <p className="text-xs text-red-500 mt-1">Please enter a bill number.</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="pr-number">PR Number (Optional)</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={createForm.prNumber}
+                      onValueChange={(value) => {
+                        setCreateForm(f => ({ ...f, prNumber: value }));
+                        setErrors(e => ({ ...e, prNumber: false }));
+                      }}
+                    >
+                      <SelectTrigger className={errors.prNumber ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select PR (optional)" />
                       </SelectTrigger>
                       <SelectContent>
@@ -261,12 +357,30 @@ const PurchaseBills = () => {
                   </div>
                   <div>
                     <Label htmlFor="date">Date</Label>
-                    <Input id="date" type="date" />
+                    <Input
+                      id="date"
+                      type="date"
+                      className={errors.date ? "border-red-500" : ""}
+                      value={createForm.date}
+                      onChange={e => {
+                        setCreateForm(f => ({ ...f, date: e.target.value }));
+                        setErrors(e => ({ ...e, date: false }));
+                      }}
+                    />
+                    {errors.date && (
+                      <p className="text-xs text-red-500 mt-1">Please select a date.</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="payment-terms">Payment Terms</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={createForm.paymentTerms}
+                      onValueChange={(value) => {
+                        setCreateForm(f => ({ ...f, paymentTerms: value }));
+                        setErrors(e => ({ ...e, paymentTerms: false }));
+                      }}
+                    >
+                      <SelectTrigger className={errors.paymentTerms ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select payment terms" />
                       </SelectTrigger>
                       <SelectContent>
@@ -275,6 +389,9 @@ const PurchaseBills = () => {
                         <SelectItem value="immediate">Immediate</SelectItem>
                       </SelectContent>
                     </Select>
+                    {errors.paymentTerms && (
+                      <p className="text-xs text-red-500 mt-1">Please select payment terms.</p>
+                    )}
                   </div>
                 </div>
 
@@ -310,7 +427,12 @@ const PurchaseBills = () => {
 
                 <div>
                   <Label htmlFor="notes">Internal Notes</Label>
-                  <Textarea id="notes" placeholder="Add internal notes..." />
+                  <Textarea
+                    id="notes"
+                    placeholder="Add internal notes..."
+                    value={createForm.notes}
+                    onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))}
+                  />
                 </div>
 
                 <div>
@@ -319,7 +441,17 @@ const PurchaseBills = () => {
                     <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
                     <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
                     <p className="text-xs text-gray-500">Maximum file size: 5MB</p>
-                    <Input type="file" className="hidden" />
+                    <Input
+                      type="file"
+                      className={`${errors.document ? "border-red-500" : ""}`}
+                      onChange={(e) => {
+                        setCreateForm(f => ({ ...f, document: e.target.files?.[0] }));
+                        setErrors(e => ({ ...e, document: false }));
+                      }}
+                    />
+                    {errors.document && (
+                      <p className="text-xs text-red-500 mt-1">Document is required</p>
+                    )}
                   </div>
                 </div>
 
@@ -327,10 +459,10 @@ const PurchaseBills = () => {
                   <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={handleSaveDraft}>
                     Save as Draft
                   </Button>
-                  <Button>
+                  <Button onClick={handleSave}>
                     Save
                   </Button>
                 </div>
