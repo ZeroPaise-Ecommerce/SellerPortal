@@ -76,6 +76,28 @@ const PurchaseReceives = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedReceive, setSelectedReceive] = useState<any>(null);
 
+  const [form, setForm] = useState({
+    supplierName: "",
+    poNumber: "",
+    receivedDate: "",
+    date: "",
+    status: "",
+    notes: "",
+    document: null as File | null,
+  });
+
+  const [errors, setErrors] = useState({
+    supplierName: false,
+    poNumber: false,
+    prNumber: false,
+    receivedDate: false,
+    date: false,
+    status: false,
+    items: false,
+    notes: false,
+    document: false,
+  });
+
   const receives = [
     {
       id: "GRN-1001",
@@ -153,6 +175,47 @@ const PurchaseReceives = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleSaveDraft = () => {
+    const newErrors = {
+      supplierName: !form.supplierName,
+      poNumber: !form.poNumber,
+      receivedDate: !form.receivedDate,
+      date: !form.date,
+      status: !form.status,
+      items: false, // Add logic if needed
+      notes: false, // Optional
+      document: !form.document,
+      prNumber: false, // Added to match expected error object shape
+    };
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).some(Boolean)) {
+      return; // Don’t proceed if any error
+    }
+    console.log("Save Draft");
+  };
+
+  const handleSave = () => {
+    const newErrors = {
+      supplierName: !form.supplierName,
+      poNumber: !form.poNumber,
+      receivedDate: !form.receivedDate,
+      date: !form.date,
+      status: !form.status,
+      items: false, // Add logic if needed
+      notes: false, // Optional
+      document: !form.document,
+      // Add prNumber: false to match the expected error object shape
+      prNumber: false,
+    };
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).some(Boolean)) {
+      return; // Don’t proceed if any error
+    }
+    console.log("Save");
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Stats */}
@@ -222,8 +285,14 @@ const PurchaseReceives = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="supplier">Supplier Name</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={form.supplierName}
+                      onValueChange={(value) => {
+                        setForm(f => ({ ...f, supplierName: value }));
+                        setErrors(e => ({ ...e, supplierName: false }));
+                      }}
+                    >
+                      <SelectTrigger className={`${errors.supplierName ? "border border-red-500" : ""}`}>
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
@@ -235,8 +304,14 @@ const PurchaseReceives = () => {
                   </div>
                   <div>
                     <Label htmlFor="po-number">Purchase Order Number</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={form.poNumber}
+                      onValueChange={(value) => {
+                        setForm(f => ({ ...f, poNumber: value }));
+                        setErrors(e => ({ ...e, poNumber: false }));
+                      }}
+                    >
+                      <SelectTrigger className={`${errors.poNumber ? "border border-red-500" : ""}`}>
                         <SelectValue placeholder="Select PO" />
                       </SelectTrigger>
                       <SelectContent>
@@ -252,16 +327,28 @@ const PurchaseReceives = () => {
                   </div>
                   <div>
                     <Label htmlFor="received-date">Received Date</Label>
-                    <Input id="received-date" type="date" />
+                    <Input id="received-date" type="date" className={`${errors.receivedDate ? "border border-red-500" : ""}`} value={form.receivedDate} onChange={(e) => {
+                      setForm(f => ({ ...f, receivedDate: e.target.value }));
+                      setErrors(e => ({ ...e, receivedDate: false }));
+                    }} />
                   </div>
                   <div>
                     <Label htmlFor="date">Date</Label>
-                    <Input id="date" type="date" />
+                    <Input id="date" type="date" className={`${errors.date ? "border border-red-500" : ""}`} value={form.date} onChange={(e) => {
+                      setForm(f => ({ ...f, date: e.target.value }));
+                      setErrors(e => ({ ...e, date: false }));
+                    }} />
                   </div>
                   <div>
                     <Label htmlFor="status">Received Status</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={form.status}
+                      onValueChange={(value) => {
+                        setForm(f => ({ ...f, status: value }));
+                        setErrors(e => ({ ...e, status: false }));
+                      }}
+                    >
+                      <SelectTrigger className={`${errors.status ? "border border-red-500" : ""}`}>
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -290,7 +377,7 @@ const PurchaseReceives = () => {
                           <TableCell>Sample Item 1</TableCell>
                           <TableCell>10</TableCell>
                           <TableCell>
-                            <Input type="number" defaultValue="10" className="w-20" />
+                            <Input type="number" defaultValue="10" className={`${errors.items ? "border border-red-500" : ""}`} />
                           </TableCell>
                           <TableCell>₹100.00</TableCell>
                           <TableCell>₹1,000.00</TableCell>
@@ -302,7 +389,10 @@ const PurchaseReceives = () => {
 
                 <div>
                   <Label htmlFor="notes">Internal Notes</Label>
-                  <Textarea id="notes" placeholder="Add internal notes..." />
+                  <Textarea id="notes" placeholder="Add internal notes..." className={`${errors.notes ? "border border-red-500" : ""}`} value={form.notes} onChange={(e) => {
+                    setForm(f => ({ ...f, notes: e.target.value }));
+                    setErrors(e => ({ ...e, notes: false }));
+                  }} />
                 </div>
 
                 <div>
@@ -311,7 +401,17 @@ const PurchaseReceives = () => {
                     <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
                     <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
                     <p className="text-xs text-gray-500">Maximum file size: 5MB</p>
-                    <Input type="file" className="hidden" />
+                    <Input
+                      type="file"
+                      className={`${errors.document ? "border border-red-500" : ""}`}
+                      onChange={(e) => {
+                        setForm(f => ({ ...f, document: e.target.files?.[0] }));
+                        setErrors(e => ({ ...e, document: false }));
+                      }}
+                    />
+                    {errors.document && (
+                      <p className="text-xs text-red-500 mt-1">Please upload a document.</p>
+                    )}
                   </div>
                 </div>
 
@@ -319,10 +419,10 @@ const PurchaseReceives = () => {
                   <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={handleSaveDraft}>
                     Save as Draft
                   </Button>
-                  <Button>
+                  <Button onClick={handleSave}>
                     Save
                   </Button>
                 </div>

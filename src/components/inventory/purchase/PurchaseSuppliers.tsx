@@ -43,7 +43,7 @@ const formatIndianCurrency = (amount: number) => {
 
 const PurchaseSuppliers = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [itemsPerPage, setItemsPerPage] = useState("10");
+  const [itemsPerPage, setItemsPerPage] = useState("2");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [activeStatus, setActiveStatus] = useState<{ [key: string]: boolean }>({});

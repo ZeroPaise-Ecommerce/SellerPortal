@@ -62,6 +62,24 @@ const PurchaseExpenses = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
   const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
+
+  const [createForm, setCreateForm] = useState({
+    category: "",
+    amount: "",
+    date: "",
+    paymentMethod: "",
+    account: "",
+    description: "",
+  });
+  const [errors, setErrors] = useState({
+    category: false,
+    amount: false,
+    date: false,
+    paymentMethod: false,
+    account: false,
+    description: false,
+  });
+
   const dispatch = useDispatch();
   const expenseState = useSelector((state: any) => state.expense);
 
@@ -153,6 +171,160 @@ const PurchaseExpenses = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Expense
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Add Expense</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={createForm.category}
+                        onValueChange={value => setCreateForm({ ...createForm, category: value })}
+                      >
+                        <SelectTrigger className={`flex-1 ${errors.category ? "border-red-500" : ""}`}>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Rent">Rent</SelectItem>
+                          <SelectItem value="Utilities">Utilities</SelectItem>
+                          <SelectItem value="Transport">Transport</SelectItem>
+                          <SelectItem value="Salaries">Salaries</SelectItem>
+                          <SelectItem value="Marketing">Marketing</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsCreateCategoryDialogOpen(true)}
+                        className="px-3"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {errors.category && (
+                      <span className="text-xs text-red-500">Category is required</span>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="amount">Amount <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      placeholder="Enter amount"
+                      value={createForm.amount}
+                      onChange={e => setCreateForm({ ...createForm, amount: e.target.value })}
+                      className={errors.amount ? "border-red-500" : ""}
+                    />
+                    {errors.amount && (
+                      <span className="text-xs text-red-500">Amount is required</span>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="date">Date <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={createForm.date}
+                      onChange={e => setCreateForm({ ...createForm, date: e.target.value })}
+                      className={errors.date ? "border-red-500" : ""}
+                    />
+                    {errors.date && (
+                      <span className="text-xs text-red-500">Date is required</span>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="payment-method">Payment Method <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={createForm.paymentMethod}
+                      onValueChange={value => setCreateForm({ ...createForm, paymentMethod: value })}
+                    >
+                      <SelectTrigger className={errors.paymentMethod ? "border-red-500" : ""}>
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="Credit Card">Credit Card</SelectItem>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="NEFT">NEFT</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.paymentMethod && (
+                      <span className="text-xs text-red-500">Payment method is required</span>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="account">Account <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={createForm.account}
+                      onValueChange={value => setCreateForm({ ...createForm, account: value })}
+                    >
+                      <SelectTrigger className={errors.account ? "border-red-500" : ""}>
+                        <SelectValue placeholder="Select account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="HDFC XXX3652">HDFC XXX3652</SelectItem>
+                        <SelectItem value="SBI XXX7845">SBI XXX7845</SelectItem>
+                        <SelectItem value="Visa XXX6365">Visa XXX6365</SelectItem>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.account && (
+                      <span className="text-xs text-red-500">Account is required</span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Enter expense description..."
+                    value={createForm.description}
+                    onChange={e => setCreateForm({ ...createForm, description: e.target.value })}
+                    className={errors.description ? "border-red-500" : ""}
+                  />
+                  {errors.description && (
+                    <span className="text-xs text-red-500">Description is required</span>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      // Validate required fields
+                      const newErrors = {
+                        category: !createForm.category,
+                        amount: !createForm.amount,
+                        date: !createForm.date,
+                        paymentMethod: !createForm.paymentMethod,
+                        account: !createForm.account,
+                        description: !createForm.description,
+                      };
+                      setErrors(newErrors);
+                      if (Object.values(newErrors).some(Boolean)) return;
+                      // ...submit logic here
+                      setIsCreateDialogOpen(false);
+                    }}
+                  >
+                    Save Expense
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <AddExpenseDialog
             open={isCreateDialogOpen}
             onOpenChange={setIsCreateDialogOpen}

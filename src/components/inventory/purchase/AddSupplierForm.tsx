@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +41,57 @@ const AddSupplierForm = ({supplier, onClose }: {  supplier: Supplier; onClose: (
   const [supplierData, setSupplierData] = useState<Supplier>({} as Supplier);
   const dispatch = useDispatch();
   const { stageCompleted, error } = useSelector((state: any) => state.supplier);
+  type GeneralData = typeof generalData;
+  type AddressData = typeof addressData;
+  type BankFormData = typeof bankFormData;
+  type ContactFormData = typeof contactFormData;
+  type CommentFormData = typeof commentFormData;
+
+  type GeneralFormErrors = {
+    [K in keyof GeneralData]?: boolean;
+  };
+
+  type AddressFormErrors = {
+    billing: {
+      addressLine1?: boolean;
+      addressLine2?: boolean;
+      city?: boolean;
+      pincode?: boolean;
+      state?: boolean;
+      country?: boolean;
+    };
+    shipping: {
+      addressLine1?: boolean;
+      addressLine2?: boolean;
+      city?: boolean;
+      pincode?: boolean;
+      state?: boolean;
+      country?: boolean;
+    };
+  };
+
+  type BankFormErrors = {
+    [K in keyof BankFormData]?: boolean;
+  };
+
+  type ContactFormErrors = {
+    [K in keyof ContactFormData]?: boolean;
+  };
+
+  type CommentFormErrors = {
+    [K in keyof CommentFormData]?: boolean;
+  };
+
+  const [errors, setErrors] = useState<GeneralFormErrors>({});
+  const [addressErrors, setAddressErrors] = useState<AddressFormErrors>({ 
+    billing: {},
+    shipping: {}
+   });
+  const [bankErrors, setBankErrors] = useState<BankFormErrors>({});
+  const [contactErrors, setContactErrors] = useState<ContactFormErrors>({});
+  const [commentErrors, setCommentErrors] = useState<CommentFormErrors>({});
+
+
  
   const handleClose = () => {
     onClose();
@@ -58,63 +108,65 @@ const AddSupplierForm = ({supplier, onClose }: {  supplier: Supplier; onClose: (
   //submit form data to the server
   const handleSubmit =  () => {
     const payload = {
-  supplierId: supplier?.supplierId || 0,
-  id: supplier?.id || 0,
-  firstName: generalData.firstName,
-  lastName: generalData.lastName,
-  emailAddress: generalData.email,
-  mobileNumber: generalData.mobile,
-  companyName: generalData.companyName,
-  supplierNickName: generalData.supplierNickName,
-  gstin: generalData.gstin,
-  pan: generalData.pan,
-  currency: generalData.currency,
-  designation: generalData.designation,
-  heading: comments[0]?.heading || "",
-  addresses: [
-    {
-      id: supplier?.addresses?.[0]?.id || "0",
-      supplierId: supplier?.addresses?.[0]?.supplierId || 0,
-      addressType: "billing",
-      addressLine1: addressData.billing.addressLine1,
-      addressLine2: addressData.billing.addressLine2,
-      city: addressData.billing.city,
-      state: addressData.billing.state,
-      pinCode: addressData.billing.pincode,
-      country: addressData.billing.country
-    },
-    {
-      id: supplier?.addresses?.[1]?.id || "0",
-      supplierId: supplier?.addresses?.[1]?.supplierId || 0,
-      addressType: "shipping",
-      addressLine1: addressData.shipping.addressLine1,
-      addressLine2: addressData.shipping.addressLine2,
-      city: addressData.shipping.city,
-      state: addressData.shipping.state,
-      pinCode: addressData.shipping.pincode,
-      country: addressData.shipping.country
-    }
-  ],
-  contactDetails: contactPersons.map((contact) => {
-    const match = supplier?.contactDetails?.find(
-      (c) => c.firstName === contact.firstName && c.mobileNumber === contact.mobileNumber
-    );
-    return {
-      ...contact,
-      id: match?.id || "0",
-      supplierId: match?.supplierId || 0,
+      supplierId: supplier?.supplierId || 0,
+      id: supplier?.id || 0,
+      firstName: generalData.firstName,
+      lastName: generalData.lastName,
+      emailAddress: generalData.email,
+      mobileNumber: generalData.mobile,
+      companyName: generalData.companyName,
+      supplierNickName: generalData.supplierNickName,
+      gstin: generalData.gstin,
+      pan: generalData.pan,
+      currency: generalData.currency,
+      designation: generalData.designation,
+      heading: comments[0]?.heading || "",
+      addresses: [
+        {
+          id: supplier?.addresses?.[0]?.id || "0",
+          supplierId: supplier?.addresses?.[0]?.supplierId || 0,
+          addressType: "billing",
+          addressLine1: addressData.billing.addressLine1,
+          addressLine2: addressData.billing.addressLine2,
+          city: addressData.billing.city,
+          state: addressData.billing.state,
+          pinCode: addressData.billing.pincode,
+          country: addressData.billing.country
+        },
+        {
+          id: supplier?.addresses?.[1]?.id || "0",
+          supplierId: supplier?.addresses?.[1]?.supplierId || 0,
+          addressType: "shipping",
+          addressLine1: addressData.shipping.addressLine1,
+          addressLine2: addressData.shipping.addressLine2,
+          city: addressData.shipping.city,
+          state: addressData.shipping.state,
+          pinCode: addressData.shipping.pincode,
+          country: addressData.shipping.country
+        }
+      ],
+      contactDetails: contactPersons.map((contact) => {
+        const match = supplier?.contactDetails?.find(
+          (c) => c.firstName === contact.firstName && c.mobileNumber === contact.mobileNumber
+        );
+        return {
+          ...contact,
+          id: match?.id || "0",
+          supplierId: match?.supplierId || 0,
+        };
+      }),
+      bankingDetails: bankAccounts.map((bank) => {
+        const match = supplier?.bankingDetails?.find((b) => b.bankName === bank.bankName);
+        return {
+          ...bank,
+          id: match?.id || "0",
+          supplierId: match?.supplierId || 0,
+        };
+      }),
+      comments: comments[0]?.comment || "",
     };
-  }),
-  bankingDetails: bankAccounts.map((bank) => {
-    const match = supplier?.bankingDetails?.find((b) => b.bankName === bank.bankName);
-    return {
-      ...bank,
-      id: match?.id || "0",
-      supplierId: match?.supplierId || 0,
-    };
-  }),
-  comments: comments[0]?.comment || "",
-};
+
+      
 
     console.log("Submitting supplier data:", payload);
     setSupplierData(payload);
@@ -242,8 +294,54 @@ useEffect(() => {
   });
 
   const handleNext = () => {
+
+    
     if (currentStep < 5) {
-      setCurrentStep(currentStep + 1);
+      const newErrors: any = { };
+      // check the previous step form is filled. Write a switch case for each step
+      switch(currentStep){
+        case 1:
+          if (!generalData.firstName) newErrors.firstName = true;
+          if (!generalData.lastName) newErrors.lastName = true;
+          if (!generalData.email) newErrors.email = true;
+          if (!generalData.companyName) newErrors.companyName = true;
+          if (!generalData.mobile) newErrors.mobile = true;
+
+          if (Object.keys(newErrors).length === 0) {
+            setCurrentStep(currentStep + 1);
+          } else {
+            setErrors(newErrors);
+          }
+          break;
+        case 2:
+          const newAddressErrors: AddressFormErrors = {
+            billing: {},
+            shipping: {}
+          };
+          if (!addressData.billing.addressLine1) newAddressErrors.billing.addressLine1 = true;
+          if (!addressData.billing.addressLine2) newAddressErrors.billing.addressLine2 = true;
+          if (!addressData.billing.city) newAddressErrors.billing.city = true;
+          if (!addressData.billing.pincode) newAddressErrors.billing.pincode = true;
+          if (!addressData.billing.state) newAddressErrors.billing.state = true;
+          if (!addressData.billing.country) newAddressErrors.billing.country = true;
+
+          if (
+            Object.keys(newAddressErrors.billing).length === 0 &&
+            Object.keys(newAddressErrors.shipping).length === 0
+          ) {
+            setCurrentStep(currentStep + 1);
+          } else {
+            setAddressErrors(newAddressErrors);
+          }
+          break;
+          case 3:
+          case 4:
+          case 5:
+            setCurrentStep(currentStep + 1);
+            break;
+        default:
+          break;
+      }
     }
   };
 
@@ -254,6 +352,18 @@ useEffect(() => {
   };
 
   const handleAddBankAccount = () => {
+    const newErrors: any = {};
+    if (!bankFormData.bankName) newErrors.bankName = true;
+    if (!bankFormData.accountNumber) newErrors.accountNumber = true;
+    if (!bankFormData.ifsc) newErrors.ifsc = true;
+    if (!bankFormData.accountHolderName) newErrors.accountHolderName = true;
+    if (!bankFormData.reEnterAccountNumber) newErrors.reEnterAccountNumber = true;
+    
+    if (Object.keys(newErrors).length > 0) {
+      setBankErrors(newErrors);
+      return; 
+    }
+
     if (bankFormData.bankName && bankFormData.accountNumber && bankFormData.ifsc) {
       const newAccount: SupplierBanking = {
         id:"0",
@@ -261,19 +371,29 @@ useEffect(() => {
        ...bankFormData
       };
       setBankAccounts([...bankAccounts, newAccount]);
-      setBankFormData({
-        bankName: "",
-        accountHolderName: "",
-        accountNumber: "",
-        reEnterAccountNumber: "",
-        ifsc: "",
-        remarks: ""
-      });
+      // setBankFormData({
+      //   bankName: "",
+      //   accountHolderName: "",
+      //   accountNumber: "",
+      //   reEnterAccountNumber: "",
+      //   ifsc: "",
+      //   remarks: ""
+      // });
       setShowBankForm(false);
     }
   };
 
   const handleAddContactPerson = () => {
+    const newErrors: any = {};
+    
+    if (!contactFormData.firstName) newErrors.firstName = true;
+    if (!contactFormData.mobileNumber) newErrors.mobileNumber = true;
+    
+    if (Object.keys(newErrors).length > 0) {
+      setContactErrors(newErrors);
+      return; 
+    }
+    
     if (contactFormData.firstName && contactFormData.mobileNumber) {
       const newContact: SupplierContact = {
         id: "0",
@@ -281,24 +401,35 @@ useEffect(() => {
         ...contactFormData
       };
       setContactPersons([...contactPersons, newContact]);
-      setContactFormData({
-        firstName: "",
-        lastName: "",
-        mobileNumber: "",
-        emailAddress: "",
-        workPhone: "",
-        remarks: ""
-      });
+      // setContactFormData({
+      //   firstName: "",
+      //   lastName: "",
+      //   mobileNumber: "",
+      //   emailAddress: "",
+      //   workPhone: "",
+      //   remarks: ""
+      // });
       setShowContactForm(false);
     }
   };
 
   const handleAddComment = () => {
+    const newErrors: any = {};
+    if (!commentFormData.heading) newErrors.heading = true;
+    if (!commentFormData.comment) newErrors.comment = true;
+    
+    if (Object.keys(newErrors).length > 0) {
+      setCommentErrors(newErrors);
+      return; 
+    }
+
     if (commentFormData.heading && commentFormData.comment) {
       const newComment: any = {
-        ...commentFormData
+        ...commentFormData,
+        id: Date.now() // Assign a unique id
       };
       setComments([...comments, newComment]);
+
       setCommentFormData({
         heading: "",
         comment: ""
@@ -328,14 +459,19 @@ useEffect(() => {
           <Label htmlFor="firstName">First Name *</Label>
           <Input
             id="firstName"
+            className={errors.firstName ? "border border-red-500" : ""}
             value={generalData.firstName}
-            onChange={(e) => setGeneralData({...generalData, firstName: e.target.value})}
+            onChange={(e) => {
+              setGeneralData({ ...generalData, firstName: e.target.value });
+              setErrors({ ...errors, firstName: false }); // clear error on change
+            }}
           />
         </div>
         <div>
           <Label htmlFor="lastName">Last Name *</Label>
           <Input
             id="lastName"
+            className={errors.lastName ? "border border-red-500" : ""}
             value={generalData.lastName}
             onChange={(e) => setGeneralData({...generalData, lastName: e.target.value})}
           />
@@ -345,6 +481,7 @@ useEffect(() => {
           <Input
             id="email"
             type="email"
+            className={errors.email ? "border border-red-500" : ""}
             value={generalData.email}
             onChange={(e) => setGeneralData({...generalData, email: e.target.value})}
           />
@@ -353,6 +490,7 @@ useEffect(() => {
           <Label htmlFor="supplierNickName">Supplier Nick Name</Label>
           <Input
             id="supplierNickName"
+            className={errors.supplierNickName ? "border border-red-500" : ""}
             value={generalData.supplierNickName}
             onChange={(e) => setGeneralData({...generalData, supplierNickName: e.target.value})}
           />
@@ -361,6 +499,7 @@ useEffect(() => {
           <Label htmlFor="companyName">Company Name *</Label>
           <Input
             id="companyName"
+            className={errors.companyName ? "border border-red-500" : ""}
             value={generalData.companyName}
             onChange={(e) => setGeneralData({...generalData, companyName: e.target.value})}
           />
@@ -369,6 +508,7 @@ useEffect(() => {
           <Label htmlFor="mobile">Mobile Number *</Label>
           <Input
             id="mobile"
+            className={errors.mobile ? "border border-red-500" : ""}
             value={generalData.mobile}
             onChange={(e) => setGeneralData({...generalData, mobile: e.target.value})}
           />
@@ -377,6 +517,7 @@ useEffect(() => {
           <Label htmlFor="gstin">GSTIN</Label>
           <Input
             id="gstin"
+            className={errors.gstin ? "border border-red-500" : ""}
             value={generalData.gstin}
             onChange={(e) => setGeneralData({...generalData, gstin: e.target.value})}
           />
@@ -385,6 +526,7 @@ useEffect(() => {
           <Label htmlFor="pan">PAN</Label>
           <Input
             id="pan"
+            className={errors.pan ? "border border-red-500" : ""}
             value={generalData.pan}
             onChange={(e) => setGeneralData({...generalData, pan: e.target.value})}
           />
@@ -406,6 +548,7 @@ useEffect(() => {
           <Label htmlFor="designation">Designation</Label>
           <Input
             id="designation"
+            className={errors.designation ? "border border-red-500" : ""}
             value={generalData.designation}
             onChange={(e) => setGeneralData({...generalData, designation: e.target.value})}
           />
@@ -427,6 +570,7 @@ useEffect(() => {
             <Label htmlFor="billingAddress1">Address Line 1 *</Label>
             <Input
               id="billingAddress1"
+              className={addressErrors.billing.addressLine1 ? "border border-red-500" : ""}
               value={addressData.billing.addressLine1}
               onChange={(e) => setAddressData({
                 ...addressData,
@@ -438,6 +582,7 @@ useEffect(() => {
             <Label htmlFor="billingAddress2">Address Line 2</Label>
             <Input
               id="billingAddress2"
+              className={addressErrors.billing.addressLine1 ? "border border-red-500" : ""}
               value={addressData.billing.addressLine2}
               onChange={(e) => setAddressData({
                 ...addressData,
@@ -450,6 +595,7 @@ useEffect(() => {
               <Label htmlFor="billingCity">City *</Label>
               <Input
                 id="billingCity"
+                className={addressErrors.billing.city ? "border border-red-500" : ""}
                 value={addressData.billing.city}
                 onChange={(e) => setAddressData({
                   ...addressData,
@@ -461,6 +607,7 @@ useEffect(() => {
               <Label htmlFor="billingPincode">Pincode *</Label>
               <Input
                 id="billingPincode"
+                className={addressErrors.billing.pincode ? "border border-red-500" : ""}
                 value={addressData.billing.pincode}
                 onChange={(e) => setAddressData({
                   ...addressData,
@@ -472,6 +619,7 @@ useEffect(() => {
               <Label htmlFor="billingState">State *</Label>
               <Input
                 id="billingState"
+                className={addressErrors.billing.state ? "border border-red-500" : ""}
                 value={addressData.billing.state}
                 onChange={(e) => setAddressData({
                   ...addressData,
@@ -521,6 +669,7 @@ useEffect(() => {
             <Label htmlFor="shippingAddress1">Address Line 1 *</Label>
             <Input
               id="shippingAddress1"
+              className={addressErrors.shipping.addressLine1 ? "border border-red-500" : ""}
               value={addressData.shipping.addressLine1}
               onChange={(e) => setAddressData({
                 ...addressData,
@@ -533,6 +682,7 @@ useEffect(() => {
             <Label htmlFor="shippingAddress2">Address Line 2</Label>
             <Input
               id="shippingAddress2"
+              className={addressErrors.shipping.addressLine1 ? "border border-red-500" : ""}
               value={addressData.shipping.addressLine2}
               onChange={(e) => setAddressData({
                 ...addressData,
@@ -546,6 +696,7 @@ useEffect(() => {
               <Label htmlFor="shippingCity">City *</Label>
               <Input
                 id="shippingCity"
+                className={addressErrors.shipping.city ? "border border-red-500" : ""}
                 value={addressData.shipping.city}
                 onChange={(e) => setAddressData({
                   ...addressData,
@@ -558,6 +709,7 @@ useEffect(() => {
               <Label htmlFor="shippingPincode">Pincode *</Label>
               <Input
                 id="shippingPincode"
+                className={addressErrors.shipping.pincode ? "border border-red-500" : ""}
                 value={addressData.shipping.pincode}
                 onChange={(e) => setAddressData({
                   ...addressData,
@@ -570,6 +722,7 @@ useEffect(() => {
               <Label htmlFor="shippingState">State *</Label>
               <Input
                 id="shippingState"
+                className={addressErrors.shipping.state ? "border border-red-500" : ""}
                 value={addressData.shipping.state}
                 onChange={(e) => setAddressData({
                   ...addressData,
@@ -626,6 +779,7 @@ useEffect(() => {
                 <Label htmlFor="bankName">Bank Name *</Label>
                 <Input
                   id="bankName"
+                  className={bankErrors.bankName ? "border border-red-500" : ""}
                   value={bankFormData.bankName}
                   onChange={(e) => setBankFormData({...bankFormData, bankName: e.target.value})}
                 />
@@ -634,6 +788,7 @@ useEffect(() => {
                 <Label htmlFor="accountHolder">Account Holder Name *</Label>
                 <Input
                   id="accountHolder"
+                  className={bankErrors.accountHolderName ? "border border-red-500" : ""}
                   value={bankFormData.accountHolderName}
                   onChange={(e) => setBankFormData({...bankFormData, accountHolderName: e.target.value})}
                 />
@@ -642,6 +797,7 @@ useEffect(() => {
                 <Label htmlFor="accountNumber">Account Number *</Label>
                 <Input
                   id="accountNumber"
+                  className={bankErrors.accountNumber ? "border border-red-500" : ""}
                   value={bankFormData.accountNumber}
                   onChange={(e) => setBankFormData({...bankFormData, accountNumber: e.target.value})}
                 />
@@ -650,6 +806,7 @@ useEffect(() => {
                 <Label htmlFor="reenterAccountNumber">Re-enter Account Number *</Label>
                 <Input
                   id="reenterAccountNumber"
+                  className={bankErrors.reEnterAccountNumber ? "border border-red-500" : ""}
                   value={bankFormData.reEnterAccountNumber}
                   onChange={(e) => setBankFormData({...bankFormData, reEnterAccountNumber: e.target.value})}
                 />
@@ -658,6 +815,7 @@ useEffect(() => {
                 <Label htmlFor="ifsc">IFSC Code *</Label>
                 <Input
                   id="ifsc"
+                  className={bankErrors.ifsc ? "border border-red-500" : ""}
                   value={bankFormData.ifsc}
                   onChange={(e) => setBankFormData({...bankFormData, ifsc: e.target.value})}
                 />
@@ -666,6 +824,7 @@ useEffect(() => {
                 <Label htmlFor="bankRemarks">Remarks</Label>
                 <Input
                   id="bankRemarks"
+                  // className={bankErrors.remarks ? "border border-red-500" : ""}
                   value={bankFormData.remarks}
                   onChange={(e) => setBankFormData({...bankFormData, remarks: e.target.value})}
                 />
@@ -744,6 +903,7 @@ useEffect(() => {
                 <Label htmlFor="contactFirstName">First Name *</Label>
                 <Input
                   id="contactFirstName"
+                  className={contactErrors.firstName ? "border border-red-500" : ""}
                   value={contactFormData.firstName}
                   onChange={(e) => setContactFormData({...contactFormData, firstName: e.target.value})}
                 />
@@ -752,6 +912,7 @@ useEffect(() => {
                 <Label htmlFor="contactLastName">Last Name</Label>
                 <Input
                   id="contactLastName"
+                  className={contactErrors.lastName ? "border border-red-500" : ""}
                   value={contactFormData.lastName}
                   onChange={(e) => setContactFormData({...contactFormData, lastName: e.target.value})}
                 />
@@ -760,6 +921,7 @@ useEffect(() => {
                 <Label htmlFor="contactMobile">Mobile Number *</Label>
                 <Input
                   id="contactMobile"
+                  className={contactErrors.mobileNumber ? "border border-red-500" : ""}
                   value={contactFormData.mobileNumber}
                   onChange={(e) => setContactFormData({...contactFormData, mobileNumber: e.target.value})}
                 />
@@ -769,6 +931,7 @@ useEffect(() => {
                 <Input
                   id="contactEmail"
                   type="email"
+                  className={contactErrors.emailAddress ? "border border-red-500" : ""}
                   value={contactFormData.emailAddress}
                   onChange={(e) => setContactFormData({...contactFormData, emailAddress: e.target.value})}
                 />
@@ -777,6 +940,7 @@ useEffect(() => {
                 <Label htmlFor="workPhone">Work Phone</Label>
                 <Input
                   id="workPhone"
+                  className={contactErrors.workPhone ? "border border-red-500" : ""}
                   value={contactFormData.workPhone}
                   onChange={(e) => setContactFormData({...contactFormData, workPhone: e.target.value})}
                 />
@@ -785,6 +949,7 @@ useEffect(() => {
                 <Label htmlFor="contactRemarks">Remarks</Label>
                 <Input
                   id="contactRemarks"
+                  className={contactErrors.remarks ? "border border-red-500" : ""}
                   value={contactFormData.remarks}
                   onChange={(e) => setContactFormData({...contactFormData, remarks: e.target.value})}
                 />
@@ -862,6 +1027,7 @@ useEffect(() => {
               <Label htmlFor="commentHeading">Heading *</Label>
               <Input
                 id="commentHeading"
+                className={commentErrors.heading ? "border border-red-500" : ""}
                 value={commentFormData.heading}
                 onChange={(e) => setCommentFormData({...commentFormData, heading: e.target.value})}
               />
@@ -871,6 +1037,7 @@ useEffect(() => {
               <Textarea
                 id="commentText"
                 rows={4}
+                className={commentErrors.comment ? "border border-red-500" : ""}
                 value={commentFormData.comment}
                 onChange={(e) => setCommentFormData({...commentFormData, comment: e.target.value})}
               />
@@ -953,70 +1120,36 @@ useEffect(() => {
   ];
 
   return (
-      <div className="p-6">
-        <div className="mx-auto"> 
-          {/* max-w-4xl */}
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold">
-                 {supplier ? `Edit Supplier ${supplier.firstName}` : "Add Supplier"}
-            </h2>
-            <div className="flex items-center gap-2 mt-4">
-              {stepTitles.map((title, index) => (
-                <div key={index} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    currentStep === index + 1 
-                      ? 'bg-blue-600 text-white' 
-                      : currentStep > index + 1 
-                        ? 'bg-green-600 text-white' 
-                        : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {index + 1}
-                  </div>
-                  <span className={`ml-2 text-sm ${
-                    currentStep === index + 1 ? 'text-blue-600 font-medium' : 'text-gray-600'
-                  }`}>
-                    {title}
-                  </span>
-                  {index < stepTitles.length - 1 && (
-                    <div className="w-8 h-px bg-gray-300 mx-4" />
-                  )}
-                </div>
-              ))}
-            </div>
+    <div className="p-6">
+      <div className="mx-auto">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold">{supplier ? `Edit Supplier ${supplier.firstName}` : "Add Supplier"}</h2>
+          <div className="flex items-center gap-2 mt-4">
+            {stepTitles.map((title, index) => (
+              <div key={index} className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep === index + 1 ? 'bg-blue-600 text-white' : currentStep > index + 1 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600'}`}>{index + 1}</div>
+                <span className={`ml-2 text-sm ${currentStep === index + 1 ? 'text-blue-600 font-medium' : 'text-gray-600'}`}>{title}</span>
+                {index < stepTitles.length - 1 && (<div className="w-8 h-px bg-gray-300 mx-4" />)}
+              </div>
+            ))}
           </div>
-
-          <Card>
-            <CardContent className="p-6">
-              {getCurrentStepContent()}
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-between mt-6">
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              {currentStep > 1 && (
-                <Button variant="outline" onClick={handlePrevious}>
-                  Previous
-                </Button>
-              )}
-            </div>
-            <div>
-              {currentStep < 5 ? (
-                <Button onClick={handleNext}>
-                  Next
-                </Button>
-              ) : (
-                <Button onClick={handleSubmit}>
-                  Save Supplier
-                </Button>
-              )}
-            </div>
+        </div>
+        <Card><CardContent className="p-6">{getCurrentStepContent()}</CardContent></Card>
+        <div className="flex justify-between mt-6">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            {currentStep > 1 && (<Button variant="outline" onClick={handlePrevious}>Previous</Button>)}
+          </div>
+          <div>
+            {currentStep < 5 ? (
+              <Button onClick={handleNext} disabled={(currentStep === 3 && bankAccounts.length === 0) || (currentStep === 4 && contactPersons.length === 0)}>Next</Button>
+            ) : (
+              <Button onClick={handleSubmit} disabled={bankAccounts.length === 0 || contactPersons.length === 0 || comments.length === 0}>Save Supplier</Button>
+            )}
           </div>
         </div>
       </div>
-
+    </div>
   );
 };
 
