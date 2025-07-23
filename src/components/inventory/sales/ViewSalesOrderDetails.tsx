@@ -39,10 +39,7 @@ const ViewSalesOrderDetails = ({ order, onClose, onEdit }: ViewSalesOrderDetails
     }).format(amount);
   };
 
-  const orderItems = [
-    { id: 1, name: "Product A", description: "High quality product", qty: 2, rate: 1000, amount: 2000 },
-    { id: 2, name: "Product B", description: "Premium product", qty: 1, rate: 1500, amount: 1500 },
-  ];
+  const orderItems = order.items || [];
 
   const activities = [
     { id: 1, action: "Order Created", user: "Admin", date: "15-Jun-2023 10:30 AM", description: "Sales order was created" },
@@ -55,7 +52,7 @@ const ViewSalesOrderDetails = ({ order, onClose, onEdit }: ViewSalesOrderDetails
     { id: 2, user: "Warehouse", date: "16-Jun-2023", comment: "Items picked and ready for dispatch" },
   ];
 
-  const subtotal = orderItems.reduce((sum, item) => sum + item.amount, 0);
+  const subtotal = orderItems?.reduce((sum, item) => sum + (item.amount || 0), 0);
   const tax = subtotal * 0.18;
   const total = subtotal + tax;
 
@@ -218,13 +215,13 @@ const ViewSalesOrderDetails = ({ order, onClose, onEdit }: ViewSalesOrderDetails
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orderItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{item.description}</TableCell>
-                  <TableCell className="text-right">{item.qty}</TableCell>
-                  <TableCell className="text-right">{formatIndianCurrency(item.rate)}</TableCell>
-                  <TableCell className="text-right">{formatIndianCurrency(item.amount)}</TableCell>
+              {orderItems.map((item: any, idx: number) => (
+                <TableRow key={item.id || idx}>
+                  <TableCell className="font-medium">{item.itemName}</TableCell>
+                  <TableCell>{item.description || ''}</TableCell>
+                  <TableCell className="text-right">{item.quantity || 0}</TableCell>
+                  <TableCell className="text-right">{formatIndianCurrency(item.rate || item.price || 0)}</TableCell>
+                  <TableCell className="text-right">{formatIndianCurrency(item.amount || 0)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

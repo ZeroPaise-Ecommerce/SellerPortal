@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +36,11 @@ import { Search, Plus, Filter, Eye, Edit, CheckCircle2, Clock, XCircle, FileText
 import { cn } from "@/lib/utils";
 import CreateSalesOrderForm from "./CreateSalesOrderForm";
 import ViewSalesOrderDetails from "./ViewSalesOrderDetails";
+import useAppDispatch from "@/hooks/useAppDispatch";
+import useAppSelector from "@/hooks/useAppSelector";
+import { getSalesOrdersRequest } from "@/store/Inventory/salesOrder/actions";
+import { fetchData } from '@/services/CommonService';
+import { getInventoryItemsRequest } from '@/store/Inventory/product/actions';
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -61,7 +65,21 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+const mapApiOrderToUiOrder = (apiOrder: any) => ({
+  id: apiOrder.salesOrderNumber || '',
+  customerName: apiOrder.customerName || '',
+  date: apiOrder.date || '',
+  amount: apiOrder.totalAmount || 0,
+  status: apiOrder.status || 'Draft',
+  paymentStatus: apiOrder.paymentStatus || 'Pending',
+  items: apiOrder?.items,
+});
+
 const SalesOrders = () => {
+  const dispatch = useAppDispatch();
+  const { salesOrders, loading, error } = useAppSelector((state) => state.salesOrder);
+  const { inventoryItems } = useAppSelector((state) => state.product);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
@@ -70,54 +88,39 @@ const SalesOrders = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [customers, setCustomers] = useState<any[]>([]);
 
-  const orders = [
-    {
-      id: "SO-1001",
-      customerName: "Rahul Sharma",
-      date: "15-Jun-2023",
-      amount: 24599,
-      status: "Completed",
-      paymentStatus: "Paid",
-      items: 3
-    },
-    {
-      id: "SO-1002",
-      customerName: "Priya Patel",
-      date: "10-Jun-2023",
-      amount: 18450,
-      status: "Processing",
-      paymentStatus: "Pending",
-      items: 2
-    },
-    {
-      id: "SO-1003",
-      customerName: "Amit Kumar",
-      date: "05-Jun-2023",
-      amount: 9275,
-      status: "Completed",
-      paymentStatus: "Paid",
-      items: 1
-    },
-    {
-      id: "SO-1004",
-      customerName: "Deepa Singh",
-      date: "01-Jun-2023",
-      amount: 15699,
-      status: "Cancelled",
-      paymentStatus: "Refunded",
-      items: 4
-    },
-    {
-      id: "SO-1005",
-      customerName: "Vikram Reddy",
-      date: "28-May-2023",
-      amount: 7850,
-      status: "Draft",
-      paymentStatus: "Pending",
-      items: 2
-    },
-  ];
+  // Fetch sales orders on component mount
+  const fetchSalesOrders = useCallback(() => {
+    dispatch(getSalesOrdersRequest());
+  }, [dispatch]);
+
+  // Fetch customers and products on mount
+  useEffect(() => {
+    const fetchLists = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_GATEWAY_URL;
+        const [customerList] = await Promise.all([
+          fetchData('Customer', baseUrl),
+        ]);
+        setCustomers(customerList?.data || []);
+        // Fetch inventory items via Redux action
+        dispatch(getInventoryItemsRequest());
+      } catch (err) {
+        setCustomers([]);
+      }
+    };
+    fetchLists();
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchSalesOrders();
+  }, [fetchSalesOrders]);
+
+  // Use sales orders from Redux store only
+  const orders = salesOrders && salesOrders?.data?.length > 0
+    ? salesOrders?.data?.map(mapApiOrderToUiOrder)
+    : [];
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -145,6 +148,40 @@ const SalesOrders = () => {
     setSelectedOrder(order);
     setIsEditModalOpen(true);
   };
+
+  const handleCreateSuccess = () => {
+    setIsCreateModalOpen(false);
+    fetchSalesOrders(); // Refresh the list after creating
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditModalOpen(false);
+    fetchSalesOrders(); // Refresh the list after editing
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-gray-600">Loading sales orders...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-red-600">Error loading sales orders: {error}</div>
+      </div>
+    );
+  }
+
+  if (!loading && orders.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg text-gray-600">No sales orders found.</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -226,7 +263,11 @@ const SalesOrders = () => {
               <DialogHeader>
                 <DialogTitle>Create New Sales Order</DialogTitle>
               </DialogHeader>
-              <CreateSalesOrderForm onClose={() => setIsCreateModalOpen(false)} />
+              <CreateSalesOrderForm 
+                onClose={handleCreateSuccess} 
+                customers={customers}
+                products={inventoryItems || []}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -252,7 +293,7 @@ const SalesOrders = () => {
               <TableBody>
                 {currentItems.map((order, index) => (
                   <TableRow 
-                    key={order.id}
+                    key={`${order.id}-${index}`}
                     className={`hover:bg-blue-50 transition-colors duration-150 ${
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                     }`}
@@ -274,7 +315,7 @@ const SalesOrders = () => {
                         {order.paymentStatus}
                       </span>
                     </TableCell>
-                    <TableCell className="text-center">{order.items}</TableCell>
+                    <TableCell className="text-center">{Array.isArray(order.items) ? order.items.length : 0}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-2">
                         <Button 
@@ -380,8 +421,10 @@ const SalesOrders = () => {
           {selectedOrder && (
             <CreateSalesOrderForm 
               order={selectedOrder}
+              customers={customers}
+              products={inventoryItems || []}
               isEdit={true}
-              onClose={() => setIsEditModalOpen(false)} 
+              onClose={handleEditSuccess} 
             />
           )}
         </DialogContent>
