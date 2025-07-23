@@ -73,6 +73,27 @@ const PurchasePaymentsOut = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
 
+  // Controlled form state for Make Payment dialog
+  const [form, setForm] = useState({
+    supplier: "",
+    billNumber: "",
+    prNumber: "",
+    poNumber: "",
+    date: "",
+    paymentTerms: "",
+    notes: "",
+    file: null,
+  });
+  const [paymentErrors, setPaymentErrors] = useState({
+    supplier: false,
+    billNumber: false,
+    prNumber: false,
+    date: false,
+    paymentTerms: false,
+    notes: false,
+    file: false,
+  });
+
   const payments = [
     {
       id: "PAY-1001",
@@ -150,6 +171,55 @@ const PurchasePaymentsOut = () => {
     setIsEditDialogOpen(true);
   };
 
+  const handleFormChange = (field: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setPaymentErrors((prev) => ({ ...prev, [field]: false }));
+  };
+
+  const handleSaveAsDraft = () => {
+    setPaymentErrors({
+      supplier: false,
+      billNumber: false,
+      prNumber: false,
+      date: false,
+      paymentTerms: false,
+      notes: false,
+      file: false,
+    });
+    // Optionally clear form or keep as is
+    console.log("Save as Draft", form);
+  };
+
+  const handleSave = () => {
+    // Validate required fields
+    const errors = {
+      supplier: !form.supplier,
+      billNumber: !form.billNumber,
+      prNumber: !form.prNumber,
+      date: !form.date,
+      paymentTerms: !form.paymentTerms,
+      notes: !form.notes,
+      file: !form.file,
+    };
+    setPaymentErrors(errors);
+    const hasError = Object.values(errors).some(Boolean);
+    if (hasError) return;
+    // Proceed with save logic
+    console.log("Save", form);
+    setIsCreateDialogOpen(false);
+    // Optionally reset form
+    setForm({
+      supplier: "",
+      billNumber: "",
+      prNumber: "",
+      poNumber: "",
+      date: "",
+      paymentTerms: "",
+      notes: "",
+      file: null,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Stats */}
@@ -221,8 +291,11 @@ const PurchasePaymentsOut = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="supplier">Supplier Name</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={form.supplier}
+                      onValueChange={(value) => handleFormChange("supplier", value)}
+                    >
+                      <SelectTrigger className={paymentErrors.supplier ? "border border-red-500" : ""}>
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
@@ -231,10 +304,16 @@ const PurchasePaymentsOut = () => {
                         <SelectItem value="asian">Asian Paints Ltd.</SelectItem>
                       </SelectContent>
                     </Select>
+                    {paymentErrors.supplier && (
+                      <span className="text-xs text-red-500">Supplier is required.</span>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="po-number">Purchase Order Number</Label>
-                    <Select>
+                    <Select
+                      value={form.poNumber}
+                      onValueChange={(value) => handleFormChange("poNumber", value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select PO" />
                       </SelectTrigger>
@@ -247,8 +326,11 @@ const PurchasePaymentsOut = () => {
                   </div>
                   <div>
                     <Label htmlFor="bill-number">Bill Number</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={form.billNumber}
+                      onValueChange={(value) => handleFormChange("billNumber", value)}
+                    >
+                      <SelectTrigger className={paymentErrors.billNumber ? "border border-red-500" : ""}>
                         <SelectValue placeholder="Select bill" />
                       </SelectTrigger>
                       <SelectContent>
@@ -257,11 +339,17 @@ const PurchasePaymentsOut = () => {
                         <SelectItem value="bill3">BILL-1003</SelectItem>
                       </SelectContent>
                     </Select>
+                    {paymentErrors.billNumber && (
+                      <span className="text-xs text-red-500">Bill Number is required.</span>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="pr-number">PR Number</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={form.prNumber}
+                      onValueChange={(value) => handleFormChange("prNumber", value)}
+                    >
+                      <SelectTrigger className={paymentErrors.prNumber ? "border border-red-500" : ""}>
                         <SelectValue placeholder="Select PR" />
                       </SelectTrigger>
                       <SelectContent>
@@ -270,15 +358,30 @@ const PurchasePaymentsOut = () => {
                         <SelectItem value="pr3">PR-1003</SelectItem>
                       </SelectContent>
                     </Select>
+                    {paymentErrors.prNumber && (
+                      <span className="text-xs text-red-500">PR Number is required.</span>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="date">Date</Label>
-                    <Input id="date" type="date" />
+                    <Input
+                      id="date"
+                      type="date"
+                      value={form.date}
+                      onChange={(e) => handleFormChange("date", e.target.value)}
+                      className={paymentErrors.date ? "border border-red-500" : ""}
+                    />
+                    {paymentErrors.date && (
+                      <span className="text-xs text-red-500">Date is required.</span>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="payment-terms">Payment Terms</Label>
-                    <Select>
-                      <SelectTrigger>
+                    <Select
+                      value={form.paymentTerms}
+                      onValueChange={(value) => handleFormChange("paymentTerms", value)}
+                    >
+                      <SelectTrigger className={paymentErrors.paymentTerms ? "border border-red-500" : ""}>
                         <SelectValue placeholder="Select payment terms" />
                       </SelectTrigger>
                       <SelectContent>
@@ -287,6 +390,9 @@ const PurchasePaymentsOut = () => {
                         <SelectItem value="immediate">Immediate</SelectItem>
                       </SelectContent>
                     </Select>
+                    {paymentErrors.paymentTerms && (
+                      <span className="text-xs text-red-500">Payment Terms is required.</span>
+                    )}
                   </div>
                 </div>
 
@@ -316,16 +422,38 @@ const PurchasePaymentsOut = () => {
 
                 <div>
                   <Label htmlFor="notes">Internal Notes</Label>
-                  <Textarea id="notes" placeholder="Add internal notes..." />
+                  <Textarea
+                    id="notes"
+                    placeholder="Add internal notes..."
+                    value={form.notes}
+                    onChange={(e) => handleFormChange("notes", e.target.value)}
+                    className={paymentErrors.notes ? "border border-red-500" : ""}
+                  />
+                  {paymentErrors.notes && (
+                    <span className="text-xs text-red-500">Internal Notes is required.</span>
+                  )}
                 </div>
 
                 <div>
                   <Label>Upload Document/Attachments</Label>
-                  <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <div className={`mt-2 border-2 border-dashed rounded-lg p-6 text-center ${paymentErrors.file ? 'border-red-500' : 'border-gray-300'}`}>
                     <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
                     <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
                     <p className="text-xs text-gray-500">Maximum file size: 5MB</p>
-                    <Input type="file" className="hidden" />
+                    <Input
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        handleFormChange("file", file ? file.name : "");
+                      }}
+                    />
+                    {form.file && (
+                      <p className="text-xs text-green-600 mt-2">Selected: {form.file}</p>
+                    )}
+                    {paymentErrors.file && (
+                      <span className="text-xs text-red-500 block mt-2">Document is required.</span>
+                    )}
                   </div>
                 </div>
 
@@ -333,10 +461,10 @@ const PurchasePaymentsOut = () => {
                   <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={handleSaveAsDraft}>
                     Save as Draft
                   </Button>
-                  <Button>
+                  <Button onClick={handleSave}>
                     Save
                   </Button>
                 </div>
@@ -500,10 +628,10 @@ const PurchasePaymentsOut = () => {
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={handleSaveAsDraft}>
                   Save as Draft
                 </Button>
-                <Button>
+                <Button onClick={handleSave}>
                   Save Changes
                 </Button>
               </div>

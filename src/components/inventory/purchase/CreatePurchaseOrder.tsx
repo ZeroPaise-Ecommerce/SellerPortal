@@ -32,6 +32,7 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
   const dispatch = useAppDispatch();
   let passSupplier = undefined;
   const [showSupplierForm, setShowSupplierForm] = useState(false);
+  const [errors, setErrors] = useState({ supplierName: false, itemName: false });
 
   const generatePurchaseOrderNumber = () => {
     const date = new Date();
@@ -106,6 +107,16 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
     return <AddSupplierForm supplier={passSupplier} onClose={() => setShowSupplierForm(false)} />;
   }
 
+  const handleSave = () => {
+    if (purchaseOrder.supplierName === "" || purchaseOrder.items.some(item => item.itemName === "")) {
+      setErrors((prev) => ({ ...prev, supplierName: purchaseOrder.supplierName === "", itemName: purchaseOrder.items.some(item => item.itemName === "") }));
+      return;
+    }
+    setErrors({ supplierName: false, itemName: false });
+    console.log("Save");
+    // You can call createPurchaseOrder() here or add further logic
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -121,7 +132,7 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
               <Label htmlFor="supplierName">Supplier Name *</Label>
               <div className="flex gap-2">
                 <Select onValueChange={(value) => setPurchaseOrder(prev => ({ ...prev, supplierName: value }))}>
-                  <SelectTrigger className="flex-1">
+                  <SelectTrigger className={`flex-1 ${errors.supplierName ? "border border-red-500" : ""}`}>
                     <SelectValue placeholder="Select or search supplier" />
                   </SelectTrigger>
                   <SelectContent>
@@ -134,6 +145,9 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
                   Create Supplier
                 </Button>
               </div>
+              {errors.supplierName && (
+                <span className="text-xs text-red-500">Supplier is required.</span>
+              )}
             </div>
 
             <div>
@@ -219,7 +233,7 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[40%]">Item Name</TableHead>
+                    <TableHead className="w-[40%]">Item Name *</TableHead>
                     <TableHead className="w-[15%]">Quantity</TableHead>
                     <TableHead className="w-[15%]">Rate</TableHead>
                     <TableHead className="w-[15%]">Amount</TableHead>
@@ -233,8 +247,12 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
                         <Input
                           placeholder="Enter item name"
                           value={item.itemName}
+                          className={`${errors.itemName ? "border border-red-500" : ""}`}
                           onChange={(e) => updateItem(item.id, 'itemName', e.target.value)}
                         />
+                        {errors.itemName && item.itemName === "" && (
+                          <span className="text-xs text-red-500">Item name is required.</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Input
@@ -304,11 +322,8 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <div className="flex gap-2">
             <Button variant="outline">Save as Draft</Button>
-            <Button variant="outline">Save & Send</Button>
-            <Button onClick={() => {
-              createPurchaseOrder();
-              onClose();
-            }}>Save</Button>
+            <Button variant="outline" onClick={handleSave}>Save & Send</Button>
+            <Button onClick={handleSave}>Save</Button>
           </div>
         </div>
       </div>
