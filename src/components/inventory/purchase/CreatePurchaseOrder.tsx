@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,14 +22,14 @@ import {
 import { Plus, Trash, Upload } from "lucide-react";
 import AddSupplierForm from "./AddSupplierForm";
 import { addPurchaseOrderRequest } from "@/store/Inventory/purchase/actions";
-import useAppDispatch from "@/hooks/useAppDispatch";
+import { useDispatch, useSelector } from "react-redux";
 
 const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: { 
   onClose: () => void; 
   isEdit?: boolean;
   orderId?: string;
 }) => {
-  const dispatch = useAppDispatch();
+  const dispatch = useDispatch();
   let passSupplier = undefined;
   const [showSupplierForm, setShowSupplierForm] = useState(false);
   const [errors, setErrors] = useState({ supplierName: false, itemName: false });
@@ -103,6 +103,21 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
     console.log("Dispatch completed");
   };
 
+  const { stageCompleted, error } = useSelector((state: any) => state.purchase);
+
+  useEffect(() => {
+    if (stageCompleted) {
+      if (!error) {
+        alert('✅ Purchase order created!');
+        onClose();
+      } else {
+        alert('❌ Error creating purchase order: ' + error);
+      }
+      // Reset the flag if you have an action for it
+      dispatch({ type: 'RESET_STAGE_COMPLETED' });
+    }
+  }, [stageCompleted, error, dispatch, onClose]);
+
   if (showSupplierForm) {
     return <AddSupplierForm supplier={passSupplier} onClose={() => setShowSupplierForm(false)} />;
   }
@@ -114,6 +129,7 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
     }
     setErrors({ supplierName: false, itemName: false });
     console.log("Save");
+    createPurchaseOrder();
     // You can call createPurchaseOrder() here or add further logic
   };
 

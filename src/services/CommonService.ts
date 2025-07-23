@@ -33,11 +33,11 @@ export const CreateActions = async (payLoad: any, targetController: string, acti
   //   createdBy: '',
   //   updatedBy: '',
   // };
-  const dtoPayload = {'dto': payLoad}
+  // const dtoPayload = {'dto': payLoad}
   const payload = {
     "targetService": targetService,
     "action":`${targetController}/${actionParameter}`,
-     payload: dtoPayload
+     payload: payLoad
      
   };
 
