@@ -33,3 +33,10 @@ export const createSupplier = async (supplierObj: any) => {
   return await res.json();
 }
 
+export const fetchPurchaseOrders = async () => {
+  const purchaseOrderUrl = `${baseurl}/purchaseorder/save`;
+  const response = await axiosInstance.get(purchaseOrderUrl);
+  console.log('Fetch purchase orders:', response.data);
+  return response.data;
+};
+

@@ -58,6 +58,33 @@ const InventoryCategories = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Add state for Add Category form
+  const [addCategoryData, setAddCategoryData] = useState({
+    name: "",
+    parent: "",
+    description: "",
+    displayOrder: "",
+    status: "active",
+  });
+  // Add state for Edit Category form
+  const [editCategoryData, setEditCategoryData] = useState({
+    name: "",
+    parent: "",
+    description: "",
+    status: "active",
+  });
+  // Error states
+  const [addCategoryErrors, setAddCategoryErrors] = useState({
+    name: false,
+    description: false,
+    status: false,
+  });
+  const [editCategoryErrors, setEditCategoryErrors] = useState({
+    name: false,
+    description: false,
+    status: false,
+  });
+
   const categories = [
     {
       id: "CAT001",
@@ -131,9 +158,45 @@ const InventoryCategories = () => {
     setIsViewModalOpen(true);
   };
 
+  // When opening Edit dialog, populate editCategoryData
   const handleEdit = (category: any) => {
     setSelectedCategory(category);
+    setEditCategoryData({
+      name: category.name || "",
+      parent: "", // You can set parent if you have it
+      description: category.description || "",
+      status: (category.status || "active").toLowerCase(),
+    });
+    setEditCategoryErrors({ name: false, description: false, status: false });
     setIsEditModalOpen(true);
+  };
+
+  // Validation functions
+  const validateCategory = (data: any, setErrors: any) => {
+    const errors = {
+      name: !data.name.trim(),
+      description: !data.description.trim(),
+      status: !data.status.trim(),
+    };
+    setErrors(errors);
+    return !Object.values(errors).some(Boolean);
+  };
+
+  // Handlers for Add Category
+  const handleAddCategorySave = () => {
+    if (!validateCategory(addCategoryData, setAddCategoryErrors)) return;
+    // Save logic here (API call or state update)
+    setIsAddCategoryOpen(false);
+    setAddCategoryData({ name: "", parent: "", description: "", displayOrder: "", status: "active" });
+    setAddCategoryErrors({ name: false, description: false, status: false });
+  };
+
+  // Handlers for Edit Category
+  const handleEditCategorySave = () => {
+    if (!validateCategory(editCategoryData, setEditCategoryErrors)) return;
+    // Update logic here (API call or state update)
+    setIsEditModalOpen(false);
+    setEditCategoryErrors({ name: false, description: false, status: false });
   };
 
   return (
@@ -219,11 +282,22 @@ const InventoryCategories = () => {
               <div className="grid grid-cols-2 gap-4 py-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Category Name *</label>
-                  <Input placeholder="Enter category name" />
+                  <Input
+                    placeholder="Enter category name"
+                    value={addCategoryData.name}
+                    onChange={e => setAddCategoryData(d => ({ ...d, name: e.target.value }))}
+                    className={addCategoryErrors.name ? "border border-red-500" : ""}
+                  />
+                  {addCategoryErrors.name && (
+                    <span className="text-xs text-red-500">Category name is required.</span>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Parent Category</label>
-                  <Select>
+                  <Select
+                    value={addCategoryData.parent}
+                    onValueChange={value => setAddCategoryData(d => ({ ...d, parent: value }))}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select parent category" />
                     </SelectTrigger>
@@ -236,16 +310,33 @@ const InventoryCategories = () => {
                 </div>
                 <div className="col-span-2 space-y-2">
                   <label className="text-sm font-medium">Description</label>
-                  <Input placeholder="Enter category description" />
+                  <Input
+                    placeholder="Enter category description"
+                    value={addCategoryData.description}
+                    onChange={e => setAddCategoryData(d => ({ ...d, description: e.target.value }))}
+                    className={addCategoryErrors.description ? "border border-red-500" : ""}
+                  />
+                  {addCategoryErrors.description && (
+                    <span className="text-xs text-red-500">Description is required.</span>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Display Order</label>
-                  <Input type="number" placeholder="1" />
+                  <Input
+                    type="number"
+                    placeholder="1"
+                    value={addCategoryData.displayOrder}
+                    onChange={e => setAddCategoryData(d => ({ ...d, displayOrder: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
-                  <Select defaultValue="active">
-                    <SelectTrigger>
+                  <Select
+                    value={addCategoryData.status}
+                    onValueChange={value => setAddCategoryData(d => ({ ...d, status: value }))}
+                    defaultValue="active"
+                  >
+                    <SelectTrigger className={addCategoryErrors.status ? "border border-red-500" : ""}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -253,11 +344,14 @@ const InventoryCategories = () => {
                       <SelectItem value="inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
+                  {addCategoryErrors.status && (
+                    <span className="text-xs text-red-500">Status is required.</span>
+                  )}
                 </div>
               </div>
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
-                <Button onClick={() => setIsAddCategoryOpen(false)}>Save Category</Button>
+                <Button onClick={handleAddCategorySave}>Save Category</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -444,11 +538,21 @@ const InventoryCategories = () => {
             <div className="grid grid-cols-2 gap-4 py-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Category Name *</label>
-                <Input defaultValue={selectedCategory.name} />
+                <Input
+                  value={editCategoryData.name}
+                  onChange={e => setEditCategoryData(d => ({ ...d, name: e.target.value }))}
+                  className={editCategoryErrors.name ? "border border-red-500" : ""}
+                />
+                {editCategoryErrors.name && (
+                  <span className="text-xs text-red-500">Category name is required.</span>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Parent Category</label>
-                <Select>
+                <Select
+                  value={editCategoryData.parent}
+                  onValueChange={value => setEditCategoryData(d => ({ ...d, parent: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select parent category" />
                   </SelectTrigger>
@@ -461,12 +565,23 @@ const InventoryCategories = () => {
               </div>
               <div className="col-span-2 space-y-2">
                 <label className="text-sm font-medium">Description</label>
-                <Input defaultValue={selectedCategory.description} />
+                <Input
+                  value={editCategoryData.description}
+                  onChange={e => setEditCategoryData(d => ({ ...d, description: e.target.value }))}
+                  className={editCategoryErrors.description ? "border border-red-500" : ""}
+                />
+                {editCategoryErrors.description && (
+                  <span className="text-xs text-red-500">Description is required.</span>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Status</label>
-                <Select defaultValue={selectedCategory.status.toLowerCase()}>
-                  <SelectTrigger>
+                <Select
+                  value={editCategoryData.status}
+                  onValueChange={value => setEditCategoryData(d => ({ ...d, status: value }))}
+                  defaultValue="active"
+                >
+                  <SelectTrigger className={editCategoryErrors.status ? "border border-red-500" : ""}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -474,12 +589,15 @@ const InventoryCategories = () => {
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
+                {editCategoryErrors.status && (
+                  <span className="text-xs text-red-500">Status is required.</span>
+                )}
               </div>
             </div>
           )}
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
-            <Button onClick={() => setIsEditModalOpen(false)}>Update Category</Button>
+            <Button onClick={handleEditCategorySave}>Update Category</Button>
           </div>
         </DialogContent>
       </Dialog>

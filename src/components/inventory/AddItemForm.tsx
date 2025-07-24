@@ -21,6 +21,7 @@ import { addBasicInfoProductRequest } from "@/store/Inventory/product/actions";
 import { Switch } from "../ui/switch";
 import { Input } from "../ui/input";
 import { add } from "date-fns";
+import "@/App.css"; // or wherever your global styles are
 
 // --- START: Inlined Form Components (AddBrandForm, AddCategoryForm, AddCountryForm) ---
 // These components were previously in separate files but are inlined here to resolve import errors.
@@ -180,12 +181,43 @@ interface VariantCombination {
   costPrice: string;
   stock: string;
   image?: string;
+  weight?: string;
+  length?: string;
+  width?: string;
+  height?: string;
+  returnWindow?: string;
 }
+
+type AddItemFormErrors = {
+  productName?: string;
+  productSku?: string;
+  productType?: string;
+  brand?: string;
+  category?: string;
+  description?: string;
+  shortDescription?: string;
+  mrp?: string;
+  sellingPrice?: string;
+  costPrice?: string;
+  stock?: string;
+  warehouse?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  tags?: string;
+  countryOfOrigin?: string;
+  mainImages?: string;
+  weight?: string;
+  length?: string;
+  width?: string;
+  height?: string;
+  returnWindow?: string;
+  // Add more as needed for all fields
+};
 
 const AddItemForm = ({ onClose }) => {
   const dispatch = useAppDispatch();
   const [currentStep, setCurrentStep] = useState(0);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<AddItemFormErrors>({});
   const [showAddBrand, setShowAddBrand] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddCountry, setShowAddCountry] = useState(false);
@@ -229,6 +261,7 @@ const AddItemForm = ({ onClose }) => {
   const [featured, setFeatured] = useState(false);
   const [countryOfOrigin, setCountryOfOrigin] = useState("");
   const [variantCombinations, setVariantCombinations] = useState<VariantCombination[]>([]);
+  const [weight, setWeight] = useState("");
 
 
     const generateVariantCombinations = () => {
@@ -335,10 +368,13 @@ const AddItemForm = ({ onClose }) => {
                   id="productName"
                   placeholder="Enter product name"
                   value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['productName'] ? 'border-red-500' : 'border-gray-300'}`}
+                  onChange={(e) => {
+                    setProductName(e.target.value);
+                    if (errors.productName) setErrors(prev => ({ ...prev, productName: undefined }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.productName ? 'border-red-500' : 'border-gray-300'}`}
                 />
-                {errors['productName'] && <p className="text-sm text-red-500">{errors['productName']}</p>}
+                {errors.productName && <p className="text-sm text-red-500">{errors.productName}</p>}
               </div>
               <div className="space-y-2">
                 <label htmlFor="productSku">Product SKU</label>
@@ -346,8 +382,11 @@ const AddItemForm = ({ onClose }) => {
                   id="productSku"
                   placeholder="Auto-generated or manual"
                   value={productSku}
-                  onChange={(e) => setProductSku(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['productSku'] ? 'border-red-500' : 'border-gray-300'}`}
+                  onChange={(e) => {
+                    setProductSku(e.target.value);
+                    if (errors.productSku) setErrors(prev => ({ ...prev, productSku: undefined }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.productSku ? 'border-red-500' : 'border-gray-300'}`}
                 />
               </div>
             </div>
@@ -358,14 +397,17 @@ const AddItemForm = ({ onClose }) => {
                 <select
                   id="productType"
                   value={productType}
-                  onChange={(e) => setProductType(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['productType'] ? 'border-red-500' : 'border-gray-300'}`}
+                  onChange={(e) => {
+                    setProductType(e.target.value);
+                    if (errors.productType) setErrors(prev => ({ ...prev, productType: undefined }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.productType ? 'border-red-500' : 'border-gray-300'}`}
                 >
                   <option value="">Select a product type</option>
                   <option value="simple">Simple Product</option>
                   <option value="variant">Variant Product</option>
                 </select>
-                {errors['productType'] && <p className="text-sm text-red-500">{errors['productType']}</p>}
+                {errors.productType && <p className="text-sm text-red-500">{errors.productType}</p>}
               </div>
               <div className="space-y-2">
                 <label htmlFor="brand">Brand</label>
@@ -373,7 +415,10 @@ const AddItemForm = ({ onClose }) => {
                   <select
                     id="brand"
                     value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
+                    onChange={(e) => {
+                      setBrand(e.target.value);
+                      if (errors.brand) setErrors(prev => ({ ...prev, brand: undefined }));
+                    }}
                     className="input flex-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
                   >
                     {brands.map((b) => (
@@ -402,7 +447,10 @@ const AddItemForm = ({ onClose }) => {
                 <select
                   id="categories"
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    if (errors.category) setErrors(prev => ({ ...prev, category: undefined }));
+                  }}
                   className="input flex-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
                 >
                   {categories.map((cat) => (
@@ -427,7 +475,10 @@ const AddItemForm = ({ onClose }) => {
                 id="description"
                 placeholder="Long product description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  if (errors.description) setErrors(prev => ({ ...prev, description: undefined }));
+                }}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -439,7 +490,10 @@ const AddItemForm = ({ onClose }) => {
                 id="shortDescription"
                 placeholder="For channel listings like Amazon"
                 value={shortDescription}
-                onChange={(e) => setShortDescription(e.target.value)}
+                onChange={(e) => {
+                  setShortDescription(e.target.value);
+                  if (errors.shortDescription) setErrors(prev => ({ ...prev, shortDescription: undefined }));
+                }}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -618,10 +672,13 @@ const AddItemForm = ({ onClose }) => {
                   type="number"
                   placeholder="0.00"
                   value={mrp}
-                  onChange={(e) => setMrp(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['mrp'] ? 'border-red-500' : 'border-gray-300'}`}
+                  onChange={(e) => {
+                    setMrp(e.target.value);
+                    if (errors.mrp) setErrors(prev => ({ ...prev, mrp: undefined }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.mrp ? 'border-red-500' : 'border-gray-300'}`}
                 />
-                {errors['mrp'] && <p className="text-sm text-red-500">{errors['mrp']}</p>}
+                {errors.mrp && <p className="text-sm text-red-500">{errors.mrp}</p>}
               </div>
               <div className="space-y-2">
                 <label htmlFor="sellingPrice">Selling Price *</label>
@@ -630,10 +687,13 @@ const AddItemForm = ({ onClose }) => {
                   type="number"
                   placeholder="0.00"
                   value={sellingPrice}
-                  onChange={(e) => setSellingPrice(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['sellingPrice'] ? 'border-red-500' : 'border-gray-300'}`}
+                  onChange={(e) => {
+                    setSellingPrice(e.target.value);
+                    if (errors.sellingPrice) setErrors(prev => ({ ...prev, sellingPrice: undefined }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.sellingPrice ? 'border-red-500' : 'border-gray-300'}`}
                 />
-                {errors['sellingPrice'] && <p className="text-sm text-red-500">{errors['sellingPrice']}</p>}
+                {errors.sellingPrice && <p className="text-sm text-red-500">{errors.sellingPrice}</p>}
               </div>
               <div className="space-y-2">
                 <label htmlFor="costPrice">Cost Price</label>
@@ -642,8 +702,11 @@ const AddItemForm = ({ onClose }) => {
                   type="number"
                   placeholder="0.00"
                   value={costPrice}
-                  onChange={(e) => setCostPrice(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['costPrice'] ? 'border-red-500' : 'border-gray-300'}`}
+                  onChange={(e) => {
+                    setCostPrice(e.target.value);
+                    if (errors.costPrice) setErrors(prev => ({ ...prev, costPrice: undefined }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.costPrice ? 'border-red-500' : 'border-gray-300'}`}
                 />
               </div>
             </div>
@@ -653,7 +716,7 @@ const AddItemForm = ({ onClose }) => {
                 <label htmlFor="taxClass">Tax Class</label>
                 <select
                   id="taxClass"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['taxClass'] ? 'border-red-500' : 'border-gray-300'}`}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
                 >
                   <option value="5">5% GST</option>
                   <option value="12">12% GST</option>
@@ -673,7 +736,7 @@ const AddItemForm = ({ onClose }) => {
                 <label htmlFor="gstType">GST Type</label>
                 <select
                   id="gstType"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['gstType'] ? 'border-red-500' : 'border-gray-300'}`}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
                 >
                   <option value="inclusive">Inclusive</option>
                   <option value="exclusive">Exclusive</option>
@@ -694,10 +757,13 @@ const AddItemForm = ({ onClose }) => {
                   type="number"
                   placeholder="0"
                   value={stock}
-                  onChange={(e) => setStock(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['stockQuantity'] ? 'border-red-500' : 'border-gray-300'}`}
+                  onChange={(e) => {
+                    setStock(e.target.value);
+                    if (errors.stock) setErrors(prev => ({ ...prev, stock: undefined }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.stock ? 'border-red-500' : 'border-gray-300'}`}
                 />
-                {errors['stockQuantity'] && <p className="text-sm text-red-500">{errors['stockQuantity']}</p>}
+                {errors.stock && <p className="text-sm text-red-500">{errors.stock}</p>}
               </div>
               <div className="space-y-2">
                 <label htmlFor="reorderPoint">Reorder Point</label>
@@ -716,8 +782,11 @@ const AddItemForm = ({ onClose }) => {
                 <select
                   id="warehouse"
                   value={warehouse}
-                  onChange={(e) => setWarehouse(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors['warehouse'] ? 'border-red-500' : 'border-gray-300'}`}
+                  onChange={(e) => {
+                    setWarehouse(e.target.value);
+                    if (errors.warehouse) setErrors(prev => ({ ...prev, warehouse: undefined }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.warehouse ? 'border-red-500' : 'border-gray-300'}`}
                 >
                   <option value="main">Main Warehouse</option>
                   <option value="store1">Retail Store 1</option>
@@ -839,15 +908,21 @@ const AddItemForm = ({ onClose }) => {
                 file => file.type.startsWith("image/")
                 );
                 if (files.length > 0) {
-                setMainImages(prev => [...prev, ...files]);
+                setMainImages(prev => {
+                  const updated = [...prev, ...files];
+                  if (errors.mainImages) setErrors(er => ({ ...er, mainImages: undefined }));
+                  return updated;
+                });
                 }
               }}
               onDragOver={e => e.preventDefault()}
               >
               <label
                 htmlFor="mainImages"
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer block"
+                className={`border-2 border-dashed rounded-lg p-8 text-center hover:border-blue-500 transition-colors cursor-pointer block focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.mainImages ? 'border-red-500 ring-2 ring-red-400 animate-shake' : 'border-gray-300'} `}
                 style={{ cursor: "pointer" }}
+                tabIndex={0}
+                aria-invalid={!!errors.mainImages}
               >
                 <Camera className="mx-auto h-12 w-12 text-gray-400" />
                 <p className="mt-2 text-sm text-gray-600">
@@ -855,14 +930,18 @@ const AddItemForm = ({ onClose }) => {
                 </p>
                 <p className="text-xs text-gray-500">JPG, PNG, WebP up to 10MB</p>
                 <input
-                id="mainImages"
-                type="file"
-                accept="image/*"
-                multiple
-                style={{ display: "none" }}
-                onChange={e => {
-                  const files = Array.from(e.target.files || []);
-                  setMainImages(prev => [...prev, ...files]);
+                  id="mainImages"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: "none" }}
+                  onChange={e => {
+                    const files = Array.from(e.target.files || []);
+                    setMainImages(prev => {
+                      const updated = [...prev, ...files];
+                      if (errors.mainImages) setErrors(er => ({ ...er, mainImages: undefined }));
+                      return updated;
+                    });
                 }}
                 />
               </label>
@@ -879,9 +958,11 @@ const AddItemForm = ({ onClose }) => {
                     type="button"
                     className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
                     onClick={() =>
-                    setMainImages(prev =>
-                      prev.filter((_: any, i: number) => i !== idx)
-                    )
+                    setMainImages(prev => {
+                      const updated = prev.filter((_: any, i: number) => i !== idx);
+                      if (errors.mainImages && updated.length > 0) setErrors(er => ({ ...er, mainImages: undefined }));
+                      return updated;
+                    })
                     }
                   >
                     <Trash2 className="w-4 h-4 text-red-500" />
@@ -890,6 +971,7 @@ const AddItemForm = ({ onClose }) => {
                 ))}
                 </div>
               )}
+              {errors.mainImages && <p className="text-sm text-red-500 mt-2">{errors.mainImages}</p>}
               </div>
             </div>
 
@@ -974,7 +1056,10 @@ const AddItemForm = ({ onClose }) => {
                 id="metaTitle"
                 placeholder="SEO-friendly title"
                 value={metaTitle}
-                onChange={(e) => setMetaTitle(e.target.value)}
+                onChange={(e) => {
+                  setMetaTitle(e.target.value);
+                  if (errors.metaTitle) setErrors(prev => ({ ...prev, metaTitle: undefined }));
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -984,7 +1069,10 @@ const AddItemForm = ({ onClose }) => {
                 id="metaDescription"
                 placeholder="SEO description for search results"
                 value={metaDescription}
-                onChange={(e) => setMetaDescription(e.target.value)}
+                onChange={(e) => {
+                  setMetaDescription(e.target.value);
+                  if (errors.metaDescription) setErrors(prev => ({ ...prev, metaDescription: undefined }));
+                }}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -995,7 +1083,10 @@ const AddItemForm = ({ onClose }) => {
                 id="searchTags"
                 placeholder="Comma-separated tags for better searchability"
                 value={tags}
-                onChange={(e) => setTags(e.target.value)}
+                onChange={(e) => {
+                  setTags(e.target.value);
+                  if (errors.tags) setErrors(prev => ({ ...prev, tags: undefined }));
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -1058,7 +1149,10 @@ const AddItemForm = ({ onClose }) => {
                 <select
                   id="countryOrigin"
                   value={countryOfOrigin}
-                  onChange={(e) => setCountryOfOrigin(e.target.value)}
+                  onChange={(e) => {
+                    setCountryOfOrigin(e.target.value);
+                    if (errors.countryOfOrigin) setErrors(prev => ({ ...prev, countryOfOrigin: undefined }));
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {countries.map((country) => (
@@ -1074,8 +1168,14 @@ const AddItemForm = ({ onClose }) => {
                   id="weight"
                   type="number"
                   placeholder="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={weight}
+                  onChange={(e) => {
+                    setWeight(e.target.value);
+                    if (errors.weight) setErrors(prev => ({ ...prev, weight: undefined }));
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.weight ? 'border-red-500' : 'border-gray-300'}`}
                 />
+                {errors.weight && <p className="text-sm text-red-500">{errors.weight}</p>}
               </div>
             </div>
 
@@ -1231,20 +1331,27 @@ const AddItemForm = ({ onClose }) => {
   const handleNext = () => {
     const currentStepId = steps[currentStep].id;
     const requiredFields = {
-      basic: ["productName", "productType"],
-      pricing: ["mrp", "sellingPrice"],
-      inventory: ["stockQuantity"],
-      additional: ["countryOrigin"],
+      basic: ["productName", "productType", "brand", "category", "description", "shortDescription"],
+      pricing: ["mrp", "sellingPrice", "costPrice"],
+      inventory: ["stock", "warehouse"],
+      seo: ["metaTitle", "metaDescription", "tags"],
+      additional: ["countryOfOrigin", "weight"],
+      media: ["mainImages"], // Ensure this is present
     };
-
     const fields = requiredFields[currentStepId];
     if (fields) {
-      const newErrors = {};
+      const newErrors: AddItemFormErrors = {};
       for (const id of fields) {
-        const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
-        if (!el || !el.value) {
-          newErrors[id] = `This field is required.`;
+        let value;
+        if (id === "mainImages") {
+          value = mainImages && mainImages.length > 0;
+        } else if (id === "weight") {
+          value = weight;
         }
+        else {
+          value = eval(id); // get value by variable name
+        }
+        if (!value) newErrors[id as keyof AddItemFormErrors] = 'This field is required.';
       }
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
@@ -1265,7 +1372,38 @@ const AddItemForm = ({ onClose }) => {
   };
 
   const handleSaveAsDraft = () => alert("Save as draft");
-  const handleSaveAndPublish = () => alert("Save and Publish clicked");
+  const handleValidateAllFields = () => {
+    const newErrors: AddItemFormErrors = {};
+    if (!productName) newErrors.productName = 'Product name is required.';
+    if (!productType) newErrors.productType = 'Product type is required.';
+    if (!brand) newErrors.brand = 'Brand is required.';
+    if (!category) newErrors.category = 'Category is required.';
+    if (!description) newErrors.description = 'Description is required.';
+    if (!shortDescription) newErrors.shortDescription = 'Short description is required.';
+    if (!mrp) newErrors.mrp = 'MRP is required.';
+    if (!sellingPrice) newErrors.sellingPrice = 'Selling price is required.';
+    if (!costPrice) newErrors.costPrice = 'Cost price is required.';
+    if (!stock) newErrors.stock = 'Stock is required.';
+    if (!warehouse) newErrors.warehouse = 'Warehouse is required.';
+    if (!metaTitle) newErrors.metaTitle = 'Meta title is required.';
+    if (!metaDescription) newErrors.metaDescription = 'Meta description is required.';
+    if (!tags) newErrors.tags = 'Tags are required.';
+    if (!countryOfOrigin) newErrors.countryOfOrigin = 'Country of origin is required.';
+    if (!weight) newErrors.weight = 'Weight is required.';
+    if (!mainImages || mainImages.length === 0) newErrors.mainImages = 'At least one main product image is required.';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  const handleSaveAndPublish = () => {
+    if (!handleValidateAllFields()) {
+      // Focus first error field
+      const firstErrorField = Object.keys(errors)[0];
+      const el = document.getElementById(firstErrorField);
+      el?.focus();
+      return;
+    }
+    alert("Save and Publish clicked");
+  };
   
 
   const renderStepperNavigation = () => {
@@ -1323,6 +1461,7 @@ const AddItemForm = ({ onClose }) => {
       visible,
       featured,
       countryOfOrigin,
+      weight,
     };
     dispatch(addBasicInfoProductRequest(payload));
   };
