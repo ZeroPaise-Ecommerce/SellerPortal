@@ -2,7 +2,16 @@ import axiosInstance from './apiClient';
 import { GatewayRequest } from '@/types/plans';
 import { Command } from 'cmdk';
 import { v4 as uuidv4 } from 'uuid';
+
 // Define API functions
+
+// Common GET method
+export const fetchData = async (controller: string, baseUrl: string) => {
+  const url = `${baseUrl}/${controller}`;
+  const response = await axiosInstance.get(url);
+  console.log(`Fetch ${controller}:`, response.data);
+  return response.data;
+};
 
 export const GetDataFromService = async (targetService: string, targetController: string, actionParameter: string, queryParams?: Record<string, string>) => {
   const action = `${targetController}/${actionParameter}`; 

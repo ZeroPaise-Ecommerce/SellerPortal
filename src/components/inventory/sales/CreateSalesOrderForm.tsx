@@ -34,9 +34,11 @@ interface CreateSalesOrderFormProps {
   order?: any;
   isEdit?: boolean;
   onClose: () => void;
+  customers: any[];
+  products: any[];
 }
 
-const CreateSalesOrderForm = ({ order, isEdit = false, onClose }: CreateSalesOrderFormProps) => {
+const CreateSalesOrderForm = ({ order, isEdit = false, onClose, customers, products }: CreateSalesOrderFormProps) => {
   const [customerName, setCustomerName] = useState(order?.customerName || "");
   const [salesOrderNumber, setSalesOrderNumber] = useState(order?.id || "SO-" + Date.now());
   const [inventory, setInventory] = useState(order?.inventory || "");
@@ -148,10 +150,18 @@ const CreateSalesOrderForm = ({ order, isEdit = false, onClose }: CreateSalesOrd
                 <SelectValue placeholder="Select customer" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Rahul Sharma">Rahul Sharma</SelectItem>
-                <SelectItem value="Priya Patel">Priya Patel</SelectItem>
-                <SelectItem value="Amit Kumar">Amit Kumar</SelectItem>
-                <SelectItem value="Deepa Singh">Deepa Singh</SelectItem>
+                {customers && customers.length > 0 ? (
+                  customers.map((customer, idx) => {
+                    const fullName = `${customer.firstName || ''} ${customer.lastName || ''}`.trim();
+                    return (
+                      <SelectItem key={customer.id || idx} value={fullName}>
+                        {fullName}
+                      </SelectItem>
+                    );
+                  })
+                ) : (
+                  <SelectItem value="">No customers found</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <Dialog open={isAddCustomerOpen} onOpenChange={setIsAddCustomerOpen}>
