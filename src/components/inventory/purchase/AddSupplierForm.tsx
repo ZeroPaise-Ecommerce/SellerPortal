@@ -458,38 +458,56 @@ useEffect(() => {
         <div>
           <Label htmlFor="firstName">First Name *</Label>
           <Input
-            id="firstName"
-            className={errors.firstName ? "border border-red-500" : ""}
-            value={generalData.firstName}
-            onChange={(e) => {
-              setGeneralData({ ...generalData, firstName: e.target.value });
-              setErrors({ ...errors, firstName: false }); // clear error on change
-            }}
-          />
+           id="firstName"
+           maxLength={15}
+           className={errors.firstName ? "border border-red-500" : ""}
+           value={generalData.firstName}
+           onChange={(e) => {
+            const value = e.target.value.replace(/[^a-zA-Z]/g, ""); // Remove non-alphabet characters
+            const formatted = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+             setGeneralData({ ...generalData, firstName: formatted });
+             setErrors({ ...errors, firstName: false });
+  }}
+/>
+
         </div>
         <div>
           <Label htmlFor="lastName">Last Name *</Label>
           <Input
             id="lastName"
+            maxLength={15}
             className={errors.lastName ? "border border-red-500" : ""}
             value={generalData.lastName}
-            onChange={(e) => setGeneralData({...generalData, lastName: e.target.value})}
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^a-zA-Z]/g, ""); // Remove non-alphabet characters
+              const formatted = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+               setGeneralData({ ...generalData, lastName: formatted });
+               setErrors({ ...errors, lastName: false });
+   }}
           />
+        
         </div>
         <div>
           <Label htmlFor="email">Email Address *</Label>
           <Input
-            id="email"
-            type="email"
-            className={errors.email ? "border border-red-500" : ""}
-            value={generalData.email}
-            onChange={(e) => setGeneralData({...generalData, email: e.target.value})}
-          />
+          id="email"
+          maxLength={30}
+          type="email"
+          className={errors.email ? "border border-red-500" : ""}
+          value={generalData.email}
+          onChange={(e) => {
+            const value = e.target.value.toLowerCase(); 
+               setGeneralData({ ...generalData, email: value });
+               const isValidEmail = /^[a-z0-9._-]+@[a-z0-9-]+\.(com|in|org|net)$/.test(value);
+                setErrors({ ...errors, email: !isValidEmail });
+  }}
+/>
         </div>
         <div>
           <Label htmlFor="supplierNickName">Supplier Nick Name</Label>
           <Input
             id="supplierNickName"
+            maxLength={20}
             className={errors.supplierNickName ? "border border-red-500" : ""}
             value={generalData.supplierNickName}
             onChange={(e) => setGeneralData({...generalData, supplierNickName: e.target.value})}
@@ -499,6 +517,8 @@ useEffect(() => {
           <Label htmlFor="companyName">Company Name *</Label>
           <Input
             id="companyName"
+            maxLength={50}
+            type="Company Name"
             className={errors.companyName ? "border border-red-500" : ""}
             value={generalData.companyName}
             onChange={(e) => setGeneralData({...generalData, companyName: e.target.value})}
@@ -508,28 +528,45 @@ useEffect(() => {
           <Label htmlFor="mobile">Mobile Number *</Label>
           <Input
             id="mobile"
+            maxLength={10}
             className={errors.mobile ? "border border-red-500" : ""}
             value={generalData.mobile}
-            onChange={(e) => setGeneralData({...generalData, mobile: e.target.value})}
-          />
-        </div>
+            onChange={(e) => {
+             const value = e.target.value.replace(/\D/g, ""); // Remove non-digits
+               setGeneralData({ ...generalData, mobile: value });
+                setErrors({ ...errors, mobile: value.length !== 10 });
+  }}
+/>
+          </div>
         <div>
           <Label htmlFor="gstin">GSTIN</Label>
           <Input
             id="gstin"
+            maxLength={15}
             className={errors.gstin ? "border border-red-500" : ""}
             value={generalData.gstin}
-            onChange={(e) => setGeneralData({...generalData, gstin: e.target.value})}
-          />
+            onChange={(e) => {
+              const value = e.target.value.toUpperCase();
+                setGeneralData({ ...generalData, gstin: value });
+              const isValidGSTIN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(value);
+                setErrors({ ...errors, gstin: !isValidGSTIN });
+  }}
+/>
         </div>
         <div>
           <Label htmlFor="pan">PAN</Label>
           <Input
             id="pan"
+            maxLength={10}
             className={errors.pan ? "border border-red-500" : ""}
             value={generalData.pan}
-            onChange={(e) => setGeneralData({...generalData, pan: e.target.value})}
-          />
+            onChange={(e) => {
+             const value = e.target.value.toUpperCase(); 
+              setGeneralData({ ...generalData, pan: value });
+              const isValidPAN = /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(value);
+               setErrors({ ...errors, pan: !isValidPAN });
+  }}
+/>
         </div>
         <div>
           <Label htmlFor="currency">Currency</Label>
@@ -548,6 +585,7 @@ useEffect(() => {
           <Label htmlFor="designation">Designation</Label>
           <Input
             id="designation"
+            maxLength={20}
             className={errors.designation ? "border border-red-500" : ""}
             value={generalData.designation}
             onChange={(e) => setGeneralData({...generalData, designation: e.target.value})}
@@ -569,49 +607,57 @@ useEffect(() => {
           <div>
             <Label htmlFor="billingAddress1">Address Line 1 *</Label>
             <Input
-              id="billingAddress1"
-              className={addressErrors.billing.addressLine1 ? "border border-red-500" : ""}
-              value={addressData.billing.addressLine1}
-              onChange={(e) => setAddressData({
-                ...addressData,
-                billing: {...addressData.billing, addressLine1: e.target.value}
-              })}
-            />
+               id="billingAddress1"
+               maxLength={50}
+               className={addressErrors.billing.addressLine1 ? "border border-red-500" : ""}
+               value={addressData.billing.addressLine1}
+               onChange={(e) => {
+               const rawValue = e.target.value.replace(/[^a-zA-Z0-9\s,./-]/g, ""); // remove invalid chars
+               const formatted = rawValue.replace(/\b\w/g, (char) => char.toUpperCase()); // capitalize each word
+                setAddressData({...addressData, billing: { ...addressData.billing, addressLine1: formatted },});
+                setAddressErrors({...addressErrors, billing: {...addressErrors.billing, addressLine1: formatted.trim() === "",
+      },
+    });
+  }}
+/>
           </div>
           <div>
             <Label htmlFor="billingAddress2">Address Line 2</Label>
             <Input
               id="billingAddress2"
-              className={addressErrors.billing.addressLine1 ? "border border-red-500" : ""}
+              maxLength={50}
+              className={addressErrors.billing.addressLine2 ? "border border-red-500" : ""}
               value={addressData.billing.addressLine2}
-              onChange={(e) => setAddressData({
-                ...addressData,
-                billing: {...addressData.billing, addressLine2: e.target.value}
-              })}
-            />
+              onChange={(e) => {
+              const rawValue = e.target.value.replace(/[^a-zA-Z0-9\s,./-]/g, ""); // Keep allowed characters only
+              const formatted = rawValue.replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize each word
+                setAddressData({...addressData, billing: { ...addressData.billing, addressLine2: formatted },});
+                setAddressErrors({...addressErrors, billing: {...addressErrors.billing, addressLine2: formatted.trim() === "",
+      },
+    });
+  }}
+/>
+
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="billingCity">City *</Label>
               <Input
                 id="billingCity"
+                maxLength={25}
                 className={addressErrors.billing.city ? "border border-red-500" : ""}
                 value={addressData.billing.city}
-                onChange={(e) => setAddressData({
-                  ...addressData,
-                  billing: {...addressData.billing, city: e.target.value}
-                })}
+                onChange={(e) => setAddressData({...addressData, billing: {...addressData.billing, city: e.target.value}})}
               />
             </div>
             <div>
               <Label htmlFor="billingPincode">Pincode *</Label>
               <Input
                 id="billingPincode"
+                maxLength={6}
                 className={addressErrors.billing.pincode ? "border border-red-500" : ""}
                 value={addressData.billing.pincode}
-                onChange={(e) => setAddressData({
-                  ...addressData,
-                  billing: {...addressData.billing, pincode: e.target.value}
+                onChange={(e) => setAddressData({...addressData, billing: {...addressData.billing, pincode: e.target.value}
                 })}
               />
             </div>
@@ -619,11 +665,10 @@ useEffect(() => {
               <Label htmlFor="billingState">State *</Label>
               <Input
                 id="billingState"
+                maxLength={25}
                 className={addressErrors.billing.state ? "border border-red-500" : ""}
                 value={addressData.billing.state}
-                onChange={(e) => setAddressData({
-                  ...addressData,
-                  billing: {...addressData.billing, state: e.target.value}
+                onChange={(e) => setAddressData({...addressData, billing: {...addressData.billing, state: e.target.value}
                 })}
               />
             </div>
@@ -632,9 +677,7 @@ useEffect(() => {
             <Label htmlFor="billingCountry">Country *</Label>
             <Select 
               value={addressData.billing.country} 
-              onValueChange={(value) => setAddressData({
-                ...addressData,
-                billing: {...addressData.billing, country: value}
+              onValueChange={(value) => setAddressData({...addressData, billing: {...addressData.billing, country: value}
               })}
             >
               <SelectTrigger>
@@ -669,11 +712,10 @@ useEffect(() => {
             <Label htmlFor="shippingAddress1">Address Line 1 *</Label>
             <Input
               id="shippingAddress1"
+              maxLength={20}
               className={addressErrors.shipping.addressLine1 ? "border border-red-500" : ""}
               value={addressData.shipping.addressLine1}
-              onChange={(e) => setAddressData({
-                ...addressData,
-                shipping: {...addressData.shipping, addressLine1: e.target.value}
+              onChange={(e) => setAddressData({...addressData, shipping: {...addressData.shipping, addressLine1: e.target.value}
               })}
               disabled={sameAsShipping}
             />
@@ -682,11 +724,10 @@ useEffect(() => {
             <Label htmlFor="shippingAddress2">Address Line 2</Label>
             <Input
               id="shippingAddress2"
+              maxLength={20}
               className={addressErrors.shipping.addressLine1 ? "border border-red-500" : ""}
               value={addressData.shipping.addressLine2}
-              onChange={(e) => setAddressData({
-                ...addressData,
-                shipping: {...addressData.shipping, addressLine2: e.target.value}
+              onChange={(e) => setAddressData({...addressData, shipping: {...addressData.shipping, addressLine2: e.target.value}
               })}
               disabled={sameAsShipping}
             />
@@ -696,11 +737,10 @@ useEffect(() => {
               <Label htmlFor="shippingCity">City *</Label>
               <Input
                 id="shippingCity"
+                maxLength={20}            
                 className={addressErrors.shipping.city ? "border border-red-500" : ""}
                 value={addressData.shipping.city}
-                onChange={(e) => setAddressData({
-                  ...addressData,
-                  shipping: {...addressData.shipping, city: e.target.value}
+                onChange={(e) => setAddressData({...addressData, shipping: {...addressData.shipping, city: e.target.value}
                 })}
                 disabled={sameAsShipping}
               />
@@ -709,11 +749,10 @@ useEffect(() => {
               <Label htmlFor="shippingPincode">Pincode *</Label>
               <Input
                 id="shippingPincode"
+                maxLength={6}
                 className={addressErrors.shipping.pincode ? "border border-red-500" : ""}
                 value={addressData.shipping.pincode}
-                onChange={(e) => setAddressData({
-                  ...addressData,
-                  shipping: {...addressData.shipping, pincode: e.target.value}
+                onChange={(e) => setAddressData({...addressData, shipping: {...addressData.shipping, pincode: e.target.value}
                 })}
                 disabled={sameAsShipping}
               />
@@ -724,9 +763,7 @@ useEffect(() => {
                 id="shippingState"
                 className={addressErrors.shipping.state ? "border border-red-500" : ""}
                 value={addressData.shipping.state}
-                onChange={(e) => setAddressData({
-                  ...addressData,
-                  shipping: {...addressData.shipping, state: e.target.value}
+                onChange={(e) => setAddressData({...addressData, shipping: {...addressData.shipping, state: e.target.value}
                 })}
                 disabled={sameAsShipping}
               />
@@ -736,9 +773,7 @@ useEffect(() => {
             <Label htmlFor="shippingCountry">Country *</Label>
             <Select 
               value={addressData.shipping.country} 
-              onValueChange={(value) => setAddressData({
-                ...addressData,
-                shipping: {...addressData.shipping, country: value}
+              onValueChange={(value) => setAddressData({...addressData, shipping: {...addressData.shipping, country: value}
               })}
               disabled={sameAsShipping}
             >
@@ -779,6 +814,7 @@ useEffect(() => {
                 <Label htmlFor="bankName">Bank Name *</Label>
                 <Input
                   id="bankName"
+                  maxLength={50}
                   className={bankErrors.bankName ? "border border-red-500" : ""}
                   value={bankFormData.bankName}
                   onChange={(e) => setBankFormData({...bankFormData, bankName: e.target.value})}
@@ -788,43 +824,73 @@ useEffect(() => {
                 <Label htmlFor="accountHolder">Account Holder Name *</Label>
                 <Input
                   id="accountHolder"
+                  maxLength={50}
                   className={bankErrors.accountHolderName ? "border border-red-500" : ""}
                   value={bankFormData.accountHolderName}
-                  onChange={(e) => setBankFormData({...bankFormData, accountHolderName: e.target.value})}
-                />
+                  onChange={(e) => {
+                  const value = e.target.value.replace(/[^a-zA-Z\s]/g, ""); // Remove numbers and special characters
+                  const formatted = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase(); // Capitalize first letter
+                    setBankFormData({...bankFormData, accountHolderName: formatted,});
+  }}
+/>
+
               </div>
               <div>
                 <Label htmlFor="accountNumber">Account Number *</Label>
                 <Input
-                  id="accountNumber"
-                  className={bankErrors.accountNumber ? "border border-red-500" : ""}
-                  value={bankFormData.accountNumber}
-                  onChange={(e) => setBankFormData({...bankFormData, accountNumber: e.target.value})}
-                />
+                id="accountNumber"
+                maxLength={18}
+                className={bankErrors.accountNumber ? "border border-red-500" : ""}
+                value={bankFormData.accountNumber}
+                onChange={(e) =>
+                setBankFormData({...bankFormData, accountNumber: e.target.value.replace(/[^0-9]/g, "")
+    })
+  }
+/>
               </div>
               <div>
                 <Label htmlFor="reenterAccountNumber">Re-enter Account Number *</Label>
                 <Input
-                  id="reenterAccountNumber"
-                  className={bankErrors.reEnterAccountNumber ? "border border-red-500" : ""}
-                  value={bankFormData.reEnterAccountNumber}
-                  onChange={(e) => setBankFormData({...bankFormData, reEnterAccountNumber: e.target.value})}
-                />
+                 id="reEnterAccountNumber"
+                 maxLength={18}
+                 className={
+                 bankFormData.reEnterAccountNumber &&
+                 bankFormData.reEnterAccountNumber !== bankFormData.accountNumber
+                 ? "border border-red-500": ""
+  }
+                 value={bankFormData.reEnterAccountNumber}
+                 onChange={(e) =>
+                 setBankFormData({
+                  ...bankFormData,
+                 reEnterAccountNumber: e.target.value.replace(/[^0-9]/g, "")
+    })
+  }
+                 onBlur={() =>
+                 bankFormData.reEnterAccountNumber &&
+                 bankFormData.reEnterAccountNumber !== bankFormData.accountNumber
+                ? alert("Account numbers do not match."): null
+  }
+/>
               </div>
               <div>
                 <Label htmlFor="ifsc">IFSC Code *</Label>
                 <Input
-                  id="ifsc"
-                  className={bankErrors.ifsc ? "border border-red-500" : ""}
-                  value={bankFormData.ifsc}
-                  onChange={(e) => setBankFormData({...bankFormData, ifsc: e.target.value})}
-                />
+                id="ifsc"
+                maxLength={11}
+                className={bankErrors.ifsc ? "border border-red-500" : ""}
+                value={bankFormData.ifsc}
+                onChange={(e) =>
+                setBankFormData({...bankFormData, ifsc: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")
+    })
+  }
+/>
               </div>
               <div>
                 <Label htmlFor="bankRemarks">Remarks</Label>
                 <Input
                   id="bankRemarks"
-                  // className={bankErrors.remarks ? "border border-red-500" : ""}
+                  maxLength={50}
+                  className={bankErrors.remarks ? "border border-red-500" : ""}
                   value={bankFormData.remarks}
                   onChange={(e) => setBankFormData({...bankFormData, remarks: e.target.value})}
                 />
@@ -905,8 +971,12 @@ useEffect(() => {
                   id="contactFirstName"
                   className={contactErrors.firstName ? "border border-red-500" : ""}
                   value={contactFormData.firstName}
-                  onChange={(e) => setContactFormData({...contactFormData, firstName: e.target.value})}
-                />
+                  onChange={(e) => {
+                  const value = e.target.value.replace(/[^a-zA-Z]/g, ""); // Remove numbers and special characters
+                  const formatted = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase(); // Capitalize first letter
+                   setContactFormData({ ...contactFormData, firstName: formatted });
+  }}
+/>
               </div>
               <div>
                 <Label htmlFor="contactLastName">Last Name</Label>
@@ -914,36 +984,57 @@ useEffect(() => {
                   id="contactLastName"
                   className={contactErrors.lastName ? "border border-red-500" : ""}
                   value={contactFormData.lastName}
-                  onChange={(e) => setContactFormData({...contactFormData, lastName: e.target.value})}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^a-zA-Z]/g, ""); // Remove numbers and special characters
+                    const formatted = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase(); // Capitalize first letter
+                    setContactFormData({ ...contactFormData, lastName: formatted });
+                    }}
                 />
               </div>
               <div>
                 <Label htmlFor="contactMobile">Mobile Number *</Label>
                 <Input
                   id="contactMobile"
+                  maxLength={10}
                   className={contactErrors.mobileNumber ? "border border-red-500" : ""}
                   value={contactFormData.mobileNumber}
-                  onChange={(e) => setContactFormData({...contactFormData, mobileNumber: e.target.value})}
-                />
+                  onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, ""); // Remove non-digit characters
+                    setContactFormData({ ...contactFormData, mobileNumber: value });
+  }}
+/>
               </div>
               <div>
                 <Label htmlFor="contactEmail">Email Address</Label>
                 <Input
                   id="contactEmail"
                   type="email"
+                  maxLength={30}
                   className={contactErrors.emailAddress ? "border border-red-500" : ""}
                   value={contactFormData.emailAddress}
-                  onChange={(e) => setContactFormData({...contactFormData, emailAddress: e.target.value})}
-                />
+                  onChange={(e) => {
+                  const value = e.target.value.toLowerCase().replace(/[^a-z0-9@._-]/g, ""); // allow only valid characters
+                  setContactFormData({ ...contactFormData, emailAddress: value });
+
+                    const isValidEmail = /^[a-z0-9._-]+@[a-z0-9-]+\.(com|in|org|net)$/i.test(value);
+                     setContactErrors({ ...contactErrors, emailAddress: !isValidEmail });
+  }}
+/>
+
               </div>
               <div>
                 <Label htmlFor="workPhone">Work Phone</Label>
                 <Input
                   id="workPhone"
+                  maxLength={10}
                   className={contactErrors.workPhone ? "border border-red-500" : ""}
                   value={contactFormData.workPhone}
-                  onChange={(e) => setContactFormData({...contactFormData, workPhone: e.target.value})}
-                />
+                  onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, ""); // Remove all non-digit characters
+                  setContactFormData({ ...contactFormData, workPhone: value });
+  }}
+/>
+
               </div>
               <div>
                 <Label htmlFor="contactRemarks">Remarks</Label>
