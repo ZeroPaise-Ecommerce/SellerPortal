@@ -110,3 +110,24 @@ export interface ExpenseState {
   error: string | null;
   stageCompleted: boolean;
 }
+
+export interface PurchaseReceivesItemDto {
+  PurchaseOrderItemId: number;
+  Amount: number;
+  ReceivedQuantity: number;
+}
+
+export interface CreatePurchaseReceivesPayload {
+  PurchaseOrderId: number;
+  PurchaseOrderNumber: string;
+  TotalAmount: number;
+  PRNumber: string | null;
+  PRReceivedDate: string | null;
+  PRDate: string | null;
+  PRInternalNotes: string | null;
+  PRReceivedStaus: string;
+  Operation: number;
+  Items: PurchaseReceivesItemDto[];
+  Attachments: any[];
+  IsPRDraft: boolean;
+}

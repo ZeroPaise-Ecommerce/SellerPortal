@@ -1,5 +1,11 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
-import { ADD_PURCHASE_ORDER__REQUEST, addPurchaseOrderFailure, addPurchaseOrderRequest, addPurchaseOrderSuccess, GET_PURCHASE_ORDER_REQUEST,  getPurchaseOrderFailure, getPurchaseOrderSuccess, CREATE_EXPENSE_REQUEST, createExpenseSuccess, createExpenseFailure, GET_EXPENSE_REQUEST, getExpenseSuccess, getExpenseFailure } from './actions';
+import { ADD_PURCHASE_ORDER__REQUEST, addPurchaseOrderFailure, addPurchaseOrderRequest, addPurchaseOrderSuccess, GET_PURCHASE_ORDER_REQUEST,  getPurchaseOrderFailure, getPurchaseOrderSuccess, CREATE_EXPENSE_REQUEST, createExpenseSuccess, createExpenseFailure, GET_EXPENSE_REQUEST, getExpenseSuccess, getExpenseFailure,
+  CREATE_PURCHASE_RECEIVES_REQUEST,
+  CREATE_PURCHASE_RECEIVES_SUCCESS,
+  CREATE_PURCHASE_RECEIVES_FAILURE,
+  createPurchaseReceivesSuccess,
+  createPurchaseReceivesFailure
+} from './actions';
 import * as api from '../../../services/CommonService';
 
 export function* createPurchaseOrder(action: any) {
@@ -39,10 +45,20 @@ export function* getExpense(action: any) {
   }
 }
 
+function* createPurchaseReceives(action: any) {
+  try {
+    const response = yield call(api.CreateActions, action.payload, 'PurchaseOrder', 'Save', 'Inventory');
+    yield put(createPurchaseReceivesSuccess(response));
+  } catch (error: any) {
+    yield put(createPurchaseReceivesFailure(error.message));
+  }
+}
+
 export function* PurchaseSage() {
   yield takeLatest(ADD_PURCHASE_ORDER__REQUEST, createPurchaseOrder);
   yield takeLatest(GET_PURCHASE_ORDER_REQUEST, getAllPurchaseOrders);
   yield takeLatest(CREATE_EXPENSE_REQUEST, createExpense);
   yield takeLatest(GET_EXPENSE_REQUEST, getExpense);
+  yield takeLatest(CREATE_PURCHASE_RECEIVES_REQUEST, createPurchaseReceives);
   yield put({ type: 'SET_STAGE_COMPLETED', payload: true });
 }

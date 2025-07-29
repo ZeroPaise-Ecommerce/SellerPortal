@@ -20,9 +20,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Trash, Upload } from "lucide-react";
-import AddSupplierForm from "./AddSupplierForm";
+import AddSupplierForm from "../AddSupplierForm";
 import { addPurchaseOrderRequest } from "@/store/Inventory/purchase/actions";
 import { useDispatch, useSelector } from "react-redux";
+import { getInventoryItemsRequest } from "@/store/Inventory/product/actions";
+import { getPurchaseOrderRequest } from "@/store/Inventory/purchase/actions";
 
 const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: { 
   onClose: () => void; 
@@ -32,7 +34,7 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
   const dispatch = useDispatch();
   let passSupplier = undefined;
   const [showSupplierForm, setShowSupplierForm] = useState(false);
-  const [errors, setErrors] = useState({ supplierName: false, itemName: false });
+  const [errors, setErrors] = useState({ supplierName: false, itemName: false, expectedDeliveryDate: false, purchaseOrderDate: false, purchaseOrderNumber: false, inventory: false, paymentPolicy: false });
 
   const generatePurchaseOrderNumber = () => {
     const date = new Date();
@@ -54,11 +56,11 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
     paymentPolicy: "",
     notesToSupplier: "",
     attachments: [],
-    items: [{ id: 1, itemName: "", account: "", quantity: 0, rate: 0, amount: 0, description: ""}],
+    items: [{ id: 1, productId: "", itemName: "", account: "", quantity: 0, rate: 0, amount: 0, description: "" }],
   });
 
   const addItem = () => {
-    const newItem = { id: Date.now(), itemName: "", account: "", quantity: 0, rate: 0, amount: 0, description: "" };
+    const newItem = { id: Date.now(), productId: "", itemName: "", account: "", quantity: 0, rate: 0, amount: 0, description: "" };
     setPurchaseOrder((prev) => ({ ...prev, items: [...prev.items, newItem] }));
   };
 
@@ -89,27 +91,83 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
 
   const createPurchaseOrder = async () => {
     console.log("createPurchaseOrder function called");
+    // Map items to DTO structure
+    const items = purchaseOrder.items.map(item => ({
+      PurchaseOrderItemId: 0, // 0 for new items
+      ItemName: item.itemName,
+      Quantity: item.quantity,
+      Rate: item.rate,
+      Amount: item.quantity * item.rate,
+      Description: item.description,
+      ReceivedQuantity: 0 // Default to 0, since not present in item
+    }));
+
+    // Build payload matching PurchaseOrderDto
     const payload = {
-      ...purchaseOrder,
-      createdBy: "admin",
-      updatedBy: "admin",
-      createdDate: new Date().toISOString(),
-      updatedDate: new Date().toISOString(),
-      operation: 0,
+      PurchaseOrderId: 0, // 0 for new
+      PurchaseOrderDate: purchaseOrder.purchaseOrderDate,
+      PurchaseOrderNumber: purchaseOrder.purchaseOrderNumber,
+      SupplierId: parseInt(purchaseOrder.supplierId, 10),
+      SupplierName: purchaseOrder.supplierName,
+      Status: "NotApplicable", // Set as needed
+      BillStatus: "NotApplicable", // Set as needed
+      PoRecived: "NotApplicable", // Set as needed
+      ExpectedDeliveryDate: purchaseOrder.expectedDeliveryDate,
+      TotalAmount: totalAmount,
+      Inventory: purchaseOrder.inventory,
+      ReferenceNumber: purchaseOrder.referenceNumber,
+      NotesToSupplier: purchaseOrder.notesToSupplier,
+      PaymentPolicy: purchaseOrder.paymentPolicy, // Should match enum string
+      CreatedDate: new Date().toISOString(),
+      UpdatedDate: new Date().toISOString(),
+      CreatedBy: "admin",
+      UpdatedBy: "admin",
+      Operation: 0,
+      Items: items,
+      Attachments: [], // Add if needed
+      PRNumber: null,
+      PRReceivedDate: null,
+      PRDate: null,
+      PRInternalNotes: null,
+      PRRecivedStaus: "Partial", // Set as needed
+      IsPRDraft: false,
+      WareHouse: null,
+      BillNumber: null,
+      BillDate: null,
+      BillInternalNotes: null,
+      BillDueDate: null,
+      IsBillDraft: false,
+      BillPaymentTerms: "Net30", // Set as needed
+      PaymentOutDate: null,
+      IsPaymentOutDraft: false,
+      PaymentOutNotes: null,
+      BankPaymentMethod: "NEFT", // Set as needed
+      PaymentOutStatus: "Pending", // Set as needed
+      AccountDetails: null
     };
 
     console.log("Dispatching payload:", payload);
     dispatch(addPurchaseOrderRequest(payload));
-    console.log("Dispatch completed");
+    console.log("Dispatch completed");  
+
   };
 
   const { stageCompleted, error } = useSelector((state: any) => state.purchase);
+  // Add selector for suppliers
+  const suppliers = useSelector((state: any) => state.supplier.suppliers || []);
+  // Add selector for inventory items
+  const inventoryItems = useSelector((state: any) => state.product.inventoryItems || []);
+
+  useEffect(() => {
+    dispatch(getInventoryItemsRequest());
+  }, [dispatch]);
 
   useEffect(() => {
     if (stageCompleted) {
       if (!error) {
         alert('✅ Purchase order created!');
         onClose();
+        dispatch(getPurchaseOrderRequest());
       } else {
         alert('❌ Error creating purchase order: ' + error);
       }
@@ -123,14 +181,27 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
   }
 
   const handleSave = () => {
-    if (purchaseOrder.supplierName === "" || purchaseOrder.items.some(item => item.itemName === "")) {
-      setErrors((prev) => ({ ...prev, supplierName: purchaseOrder.supplierName === "", itemName: purchaseOrder.items.some(item => item.itemName === "") }));
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const poDate = new Date(purchaseOrder.purchaseOrderDate);
+    const expectedDate = new Date(purchaseOrder.expectedDeliveryDate);
+    poDate.setHours(0,0,0,0);
+    expectedDate.setHours(0,0,0,0);
+    const newErrors = {
+      supplierName: purchaseOrder.supplierName === "",
+      itemName: purchaseOrder.items.some(item => !item.productId || item.itemName === ""),
+      expectedDeliveryDate: purchaseOrder.expectedDeliveryDate === "" || expectedDate < today,
+      purchaseOrderDate: purchaseOrder.purchaseOrderDate === "" || poDate < today,
+      purchaseOrderNumber: purchaseOrder.purchaseOrderNumber === "",
+      inventory: purchaseOrder.inventory === "",
+      paymentPolicy: purchaseOrder.paymentPolicy === ""
+    };
+    setErrors(newErrors);
+    if (Object.values(newErrors).some(Boolean)) {
       return;
     }
-    setErrors({ supplierName: false, itemName: false });
-    console.log("Save");
+    setErrors({ supplierName: false, itemName: false, expectedDeliveryDate: false, purchaseOrderDate: false, purchaseOrderNumber: false, inventory: false, paymentPolicy: false });
     createPurchaseOrder();
-    // You can call createPurchaseOrder() here or add further logic
   };
 
   return (
@@ -147,14 +218,23 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
             <div>
               <Label htmlFor="supplierName">Supplier Name *</Label>
               <div className="flex gap-2">
-                <Select onValueChange={(value) => setPurchaseOrder(prev => ({ ...prev, supplierName: value }))}>
+                <Select onValueChange={(key) => {
+                  const selected = suppliers.find((s: any) => String(s.supplierId) === key);
+                  setPurchaseOrder(prev => ({
+                    ...prev,
+                    supplierId: key,
+                    supplierName: selected ? (selected.companyName || (selected.firstName + ' ' + selected.lastName)) : ''
+                  }));
+                }} value={purchaseOrder.supplierId ? String(purchaseOrder.supplierId) : ""}>
                   <SelectTrigger className={`flex-1 ${errors.supplierName ? "border border-red-500" : ""}`}>
                     <SelectValue placeholder="Select or search supplier" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Tata Steel Limited">Tata Steel Limited</SelectItem>
-                    <SelectItem value="Reliance Industries Ltd.">Reliance Industries Ltd.</SelectItem>
-                    <SelectItem value="Infosys Limited">Infosys Limited</SelectItem>
+                    {suppliers.map((supplier: any) => (
+                      <SelectItem key={supplier.supplierId} value={String(supplier.supplierId)}>
+                        {supplier.companyName || (supplier.firstName + ' ' + supplier.lastName)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Button variant="outline" onClick={() => setShowSupplierForm(true)} className="whitespace-nowrap">
@@ -167,19 +247,22 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
             </div>
 
             <div>
-              <Label htmlFor="poNumber">Purchase Order Number</Label>
+              <Label htmlFor="poNumber">Purchase Order Number *</Label>
               <Input 
                 id="poNumber" 
                 value={purchaseOrder.purchaseOrderNumber}
                 readOnly 
-                className="bg-gray-50"
+                className={`bg-gray-50 ${errors.purchaseOrderNumber ? "border border-red-500" : ""}`}
               />
+              {errors.purchaseOrderNumber && (
+                <span className="text-xs text-red-500">Purchase Order Number is required.</span>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="inventory">Inventory</Label>
+              <Label htmlFor="inventory">Inventory *</Label>
               <Select onValueChange={(value) => setPurchaseOrder(prev => ({ ...prev, inventory: value }))}>
-                <SelectTrigger>
+                <SelectTrigger className={errors.inventory ? "border border-red-500" : ""}>
                   <SelectValue placeholder="Select inventory" />
                 </SelectTrigger>
                 <SelectContent>
@@ -188,41 +271,55 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
                   <SelectItem value="Retail Store 2">Retail Store 2</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.inventory && (
+                <span className="text-xs text-red-500">Inventory is required.</span>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="expectedDelivery">Expected Delivery</Label>
+              <Label htmlFor="expectedDelivery">Expected Delivery *</Label>
               <Input
                 id="expectedDelivery"
                 type="date"
                 value={purchaseOrder.expectedDeliveryDate}
                 onChange={(e) => setPurchaseOrder({ ...purchaseOrder, expectedDeliveryDate: e.target.value })}
+                className={errors.expectedDeliveryDate ? "border border-red-500" : ""}
               />
+              {errors.expectedDeliveryDate && (
+                <span className="text-xs text-red-500">Expected Delivery must be today or later.</span>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="poDate">Purchase Order Date</Label>
+              <Label htmlFor="poDate">Purchase Order Date *</Label>
               <Input
                 id="poDate"
                 type="date"
                 value={purchaseOrder.purchaseOrderDate}
                 onChange={(e) => setPurchaseOrder({ ...purchaseOrder, purchaseOrderDate: e.target.value })}
+                className={errors.purchaseOrderDate ? "border border-red-500" : ""}
               />
+              {errors.purchaseOrderDate && (
+                <span className="text-xs text-red-500">Purchase Order Date must be today or later.</span>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="paymentPolicy">Payment Policy</Label>
+              <Label htmlFor="paymentPolicy">Payment Policy *</Label>
               <Select onValueChange={(value) => setPurchaseOrder(prev => ({ ...prev, paymentPolicy: value }))}>
-                <SelectTrigger>
+                <SelectTrigger className={errors.paymentPolicy ? "border border-red-500" : ""}>
                   <SelectValue placeholder="Select payment policy" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Net 30">Net 30</SelectItem>
-                  <SelectItem value="Net 15">Net 15</SelectItem>
-                  <SelectItem value="Cash on Delivery">Cash on Delivery</SelectItem>
-                  <SelectItem value="Advance Payment">Advance Payment</SelectItem>
+                  <SelectItem value="Net30">Net 30</SelectItem>
+                  <SelectItem value="Net15">Net 15</SelectItem>
+                  <SelectItem value="CashOnDelivery">Cash on Delivery</SelectItem>
+                  <SelectItem value="AdvancePayment">Advance Payment</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.paymentPolicy && (
+                <span className="text-xs text-red-500">Payment Policy is required.</span>
+              )}
             </div>
 
             <div className="col-span-3">
@@ -257,19 +354,38 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {purchaseOrder.items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <Input
-                          placeholder="Enter item name"
-                          value={item.itemName}
-                          className={`${errors.itemName ? "border border-red-500" : ""}`}
-                          onChange={(e) => updateItem(item.id, 'itemName', e.target.value)}
-                        />
-                        {errors.itemName && item.itemName === "" && (
-                          <span className="text-xs text-red-500">Item name is required.</span>
-                        )}
-                      </TableCell>
+                  {purchaseOrder.items.map((item) => {
+                    // Get productIds already selected in other rows
+                    const selectedProductIds = purchaseOrder.items.filter(i => i.id !== item.id).map(i => i.productId);
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <Select
+                            onValueChange={(value) => {
+                              const selected = inventoryItems.find((inv: any) => String(inv.productId) === value);
+                              updateItem(item.id, 'productId', value);
+                              updateItem(item.id, 'itemName', selected ? `${selected.productName}-${selected.productId}` : '');
+                              updateItem(item.id, 'id', selected ? selected.productId : '');
+                              // Optionally set rate, etc. here:
+                              // updateItem(item.id, 'rate', selected ? selected.buyPrice : 0);
+                            }}
+                            value={item.productId ? String(item.productId) : ""}
+                          >
+                            <SelectTrigger className={`${errors.itemName ? "border border-red-500" : ""}`} >
+                              <SelectValue placeholder="Select item" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {inventoryItems.filter((inv: any) => !selectedProductIds.includes(String(inv.productId))).map((inv: any) => (
+                                <SelectItem key={inv.productId} value={String(inv.productId)}>
+                                  {inv.productName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {errors.itemName && (!item.productId || item.itemName === "") && (
+                            <span className="text-xs text-red-500">Item name is required.</span>
+                          )}
+                        </TableCell>
                       <TableCell>
                         <Input
                           type="number"
@@ -300,7 +416,8 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  );
+                })}
                   <TableRow>
                     <TableCell colSpan={3} className="text-right font-medium">Total Amount:</TableCell>
                     <TableCell className="font-bold">₹{totalAmount.toFixed(2)}</TableCell>
@@ -335,7 +452,10 @@ const CreatePurchaseOrder = ({ onClose, isEdit = false, orderId }: {
         </div>
 
         <div className="flex justify-between p-6 border-t">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={() => {
+            onClose();
+            dispatch(getPurchaseOrderRequest());
+          }}>Cancel</Button>
           <div className="flex gap-2">
             <Button variant="outline">Save as Draft</Button>
             <Button variant="outline" onClick={handleSave}>Save & Send</Button>

@@ -3,10 +3,13 @@ import React, { useState } from "react";
 import PurchaseOrdersTable from "./PurchaseOrdersTable";
 import CreatePurchaseOrder from "./CreatePurchaseOrder";
 import PurchaseOrderView from "./PurchaseOrderView";
+import { useDispatch } from 'react-redux';
+import { getPurchaseOrderRequest } from '@/store/Inventory/purchase/actions';
 
 type ViewMode = 'table' | 'create' | 'edit' | 'view';
 
 const PurchaseOrders = () => {
+  const dispatch = useDispatch();
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
 
@@ -27,6 +30,7 @@ const PurchaseOrders = () => {
   const handleClose = () => {
     setViewMode('table');
     setSelectedOrderId('');
+    dispatch(getPurchaseOrderRequest());
   };
 
   const handleEdit = () => {

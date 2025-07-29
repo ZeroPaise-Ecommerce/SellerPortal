@@ -42,6 +42,9 @@ import { Search, Plus, MoreHorizontal, FileText, Edit, Receipt, CheckCircle2, Cl
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react';
+import { addPurchaseOrderRequest } from '@/store/Inventory/purchase/actions';
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -101,73 +104,201 @@ const PurchaseBills = () => {
     document: false,
   });
 
-  const bills = [
-    {
-      id: "BILL-1001",
-      poNumber: "PO-1002",
-      supplierName: "Reliance Industries Ltd.",
-      date: "24-Jun-2023",
-      amount: 35000,
-      status: "Paid",
-      dueDate: "10-Jul-2023"
-    },
-    {
-      id: "BILL-1002",
-      poNumber: "PO-1003",
-      supplierName: "Infosys Limited",
-      date: "20-Jun-2023",
-      amount: 28500,
-      status: "Pending",
-      dueDate: "05-Jul-2023"
-    },
-    {
-      id: "BILL-1003",
-      poNumber: "PO-1005",
-      supplierName: "Asian Paints Ltd.",
-      date: "15-Jun-2023",
-      amount: 15750,
-      status: "Partial",
-      dueDate: "30-Jun-2023"
-    },
-    {
-      id: "BILL-1004",
-      poNumber: "PO-1006",
-      supplierName: "Mahindra & Mahindra",
-      date: "10-Jun-2023",
-      amount: 42000,
-      status: "Draft",
-      dueDate: "25-Jun-2023"
-    },
-    {
-      id: "BILL-1005",
-      poNumber: "PO-1007",
-      supplierName: "Tata Steel Limited",
-      date: "05-Jun-2023",
-      amount: 67500,
-      status: "Paid",
-      dueDate: "20-Jun-2023"
-    },
-  ];
+  // Redux: Get purchase orders
+  const purchaseOrders = useSelector((state: any) => state.purchase?.purchareOrders || []);
 
-  const filteredBills = bills.filter(bill =>
-    bill.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bill.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bill.poNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // State for filtered bills and form
+  const [filteredBills, setFilteredBills] = useState<any[]>([]);
+  const [billForm, setBillForm] = useState({
+    supplier: '',
+    poNumber: '',
+    billNumber: '',
+    date: '',
+    amount: '',
+    prNumber: '',
+    paymentTerms: '',
+    items: [],
+    notes: '',
+    document: null as File | null,
+  });
+
+  // Filter bills on mount and when purchaseOrders changes
+  useEffect(() => {
+    const filtered = purchaseOrders.filter((po: any) => po.billNumber && po.billNumber !== 'NotApplicable');
+    setFilteredBills(filtered);
+  }, [purchaseOrders]);
+
+  // Helper: get unique suppliers from filteredBills
+  const uniqueSuppliers = Array.from(new Set(filteredBills.map(bill => bill.supplierName)));
+
+  // State for PO options and selected PO
+  const [poOptions, setPoOptions] = useState<any[]>([]);
+  const [selectedPO, setSelectedPO] = useState<any>(null);
+
+  // When supplier changes, update PO options
+  useEffect(() => {
+    if (billForm.supplier) {
+      const pos = filteredBills.filter(bill => bill.supplierName === billForm.supplier);
+      setPoOptions(pos);
+    } else {
+      setPoOptions([]);
+    }
+    setBillForm(f => ({ ...f, poNumber: '', prNumber: '', items: [] }));
+    setSelectedPO(null);
+  }, [billForm.supplier, filteredBills]);
+
+  // When PO changes, update PR number, items, and auto-generate Bill Number
+  useEffect(() => {
+    if (billForm.poNumber) {
+      const po = poOptions.find(po => po.purchaseOrderNumber === billForm.poNumber);
+      setSelectedPO(po);
+      setBillForm(f => ({
+        ...f,
+        prNumber: po ? po.purchaseOrderNumber : '',
+        billNumber: po ? `BILL-${po.purchaseOrderNumber}-${Math.floor(Math.random() * 1000)}` : '',
+        items: po ? (po.items || []) : [],
+        amount: po ? po.totalAmount : '',
+      }));
+    } else {
+      setSelectedPO(null);
+      setBillForm(f => ({ ...f, prNumber: '', billNumber: '', items: [], amount: '' }));
+    }
+  }, [billForm.poNumber, poOptions]);
+
+  // Payment terms: remove spaces
+  const handlePaymentTermsChange = (value: string) => {
+    setBillForm(f => ({ ...f, paymentTerms: value.replace(/\s+/g, '') }));
+  };
+
+  const dispatch = useDispatch();
+  const { stageCompleted, error: billError, loading: billLoading } = useSelector((state: any) => state.purchase);
+
+  // Feedback state
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // Calculate BillDueDate (BillDate + PaymentTerms)
+  function calculateDueDate(billDate: string, paymentTerms: string) {
+    if (!billDate || !paymentTerms) return '';
+    let days = 0;
+    if (/Net(\d+)/i.test(paymentTerms)) {
+      days = parseInt(paymentTerms.replace(/\D/g, ''));
+    }
+    if (days > 0) {
+      const date = new Date(billDate);
+      date.setDate(date.getDate() + days);
+      return date.toISOString().split('T')[0];
+    }
+    return billDate;
+  }
+
+  // Validate form
+  const validateBillForm = () => {
+    const newErrors = {
+      supplier: !billForm.supplier,
+      poNumber: !billForm.poNumber,
+      billNumber: !billForm.billNumber,
+      date: !billForm.date,
+      amount: !billForm.amount,
+      prNumber: false,
+      paymentTerms: !billForm.paymentTerms,
+      items: !billForm.items || billForm.items.length === 0,
+      notes: false,
+      document: false,
+    };
+    setErrors(newErrors);
+    return !Object.values(newErrors).some(Boolean);
+  };
+
+  // On Save: dispatch create bill
+  const handleBillSave = () => {
+    if (!validateBillForm()) return;
+    const payload = {
+      PurchaseOrderId: selectedPO?.purchaseOrderId || 0,
+      PurchaseOrderNumber: selectedPO?.purchaseOrderNumber || '',
+      BillNumber: billForm.billNumber,
+      BillDate: billForm.date,
+      BillPaymentTerms: billForm.paymentTerms,
+      BillDueDate: calculateDueDate(billForm.date, billForm.paymentTerms),
+      BillInternalNotes: billForm.notes,
+      IsBillDraft: false,
+      Attachments: [],
+      BillStatus: 'Draft',
+      Items: billForm.items,
+      Amount: billForm.amount,
+      Supplier: billForm.supplier,
+      PRNumber: billForm.prNumber,
+      PONumber: billForm.poNumber,
+      Operation: 1,
+    };
+    setSuccessMsg('');
+    setErrorMsg('');
+    dispatch(addPurchaseOrderRequest(payload));
+  };
+
+  // After save, close dialog, refresh, reset form, show feedback
+  useEffect(() => {
+    if (stageCompleted && isCreateDialogOpen) {
+      if (!billError) {
+        setSuccessMsg('Bill created successfully!');
+        setIsCreateDialogOpen(false);
+        setBillForm({
+          supplier: '', poNumber: '', billNumber: '', date: '', amount: '', prNumber: '', paymentTerms: '', items: [], notes: '', document: null,
+        });
+      } else {
+        setErrorMsg('Error creating bill: ' + billError);
+      }
+      dispatch({ type: 'RESET_STAGE_COMPLETED' });
+    }
+  }, [stageCompleted, billError, isCreateDialogOpen, dispatch]);
+
+  // Document upload handler
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBillForm(f => ({ ...f, document: e.target.files?.[0] || null }));
+    setErrors(e => ({ ...e, document: false }));
+  };
+
+  // Clear feedback messages after a timeout
+  useEffect(() => {
+    if (successMsg || errorMsg) {
+      const timer = setTimeout(() => {
+        setSuccessMsg('');
+        setErrorMsg('');
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [successMsg, errorMsg]);
+
+  // Scroll to top on success
+  useEffect(() => {
+    if (successMsg) window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [successMsg]);
 
   const totalPages = Math.ceil(filteredBills.length / parseInt(itemsPerPage));
   const startIndex = (currentPage - 1) * parseInt(itemsPerPage);
   const paginatedBills = filteredBills.slice(startIndex, startIndex + parseInt(itemsPerPage));
 
-  const totalAmount = bills.reduce((sum, bill) => sum + bill.amount, 0);
-  const paidBills = bills.filter(bill => bill.status === "Paid").length;
-  const pendingBills = bills.filter(bill => bill.status === "Pending").length;
+  const totalAmount = filteredBills.reduce((sum, bill) => sum + (bill.amount || 0), 0);
+  const paidBills = filteredBills.filter(bill => bill.billStatus === "Paid").length;
+  const pendingBills = filteredBills.filter(bill => bill.billStatus === "Pending").length;
 
+  // Reset form and errors
+  const resetForm = () => {
+    setBillForm({
+      supplier: '', poNumber: '', billNumber: '', date: '', amount: '', prNumber: '', paymentTerms: '', items: [], notes: '', document: null,
+    });
+    setErrors({
+      supplier: false, poNumber: false, billNumber: false, date: false, amount: false, prNumber: false, paymentTerms: false, items: false, notes: false, document: false,
+    });
+    setSelectedPO(null);
+    setPoOptions([]);
+  };
+
+  // View/Edit dialog stubs (future expansion)
   const handleView = (bill: any) => {
     setSelectedBill(bill);
     setIsViewDialogOpen(true);
   };
-
   const handleEdit = (bill: any) => {
     setSelectedBill(bill);
     setIsEditDialogOpen(true);
@@ -207,6 +338,13 @@ const PurchaseBills = () => {
     console.log("Save");
   };
 
+  // Show loading, error, or success after all variables are defined
+  // (move this block just before the return statement)
+  // Show loading, error, or success
+  if (billLoading) return <div className="p-8 text-center">Saving bill...</div>;
+  if (errorMsg) return <div className="p-8 text-center text-red-600">{errorMsg}</div>;
+  if (successMsg) return <div className="p-8 text-center text-green-600">{successMsg}</div>;
+
   return (
     <div className="space-y-6">
       {/* Header Stats */}
@@ -217,7 +355,7 @@ const PurchaseBills = () => {
             <Receipt className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{bills.length}</div>
+            <div className="text-2xl font-bold text-blue-900">{filteredBills.length}</div>
             <p className="text-xs text-blue-600 mt-1">{paidBills} paid, {pendingBills} pending</p>
           </CardContent>
         </Card>
@@ -240,7 +378,7 @@ const PurchaseBills = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-900">
-              {formatIndianCurrency(totalAmount / bills.length)}
+              {formatIndianCurrency(filteredBills.length ? totalAmount / filteredBills.length : 0)}
             </div>
             <p className="text-xs text-purple-600 mt-1">Per bill</p>
           </CardContent>
@@ -279,9 +417,9 @@ const PurchaseBills = () => {
                   <div>
                     <Label htmlFor="supplier">Supplier Name</Label>
                     <Select
-                      value={createForm.supplier}
+                      value={billForm.supplier}
                       onValueChange={(value) => {
-                        setCreateForm(f => ({ ...f, supplier: value }));
+                        setBillForm(f => ({ ...f, supplier: value }));
                         setErrors(e => ({ ...e, supplier: false }));
                       }}
                     >
@@ -289,21 +427,19 @@ const PurchaseBills = () => {
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="reliance">Reliance Industries Ltd.</SelectItem>
-                        <SelectItem value="infosys">Infosys Limited</SelectItem>
-                        <SelectItem value="asian">Asian Paints Ltd.</SelectItem>
+                        {uniqueSuppliers.map(supplier => (
+                          <SelectItem key={supplier} value={supplier}>{supplier}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                    {errors.supplier && (
-                      <p className="text-xs text-red-500 mt-1">Please select a supplier.</p>
-                    )}
+                    {errors.supplier && <p className="text-xs text-red-500 mt-1">Please select a supplier.</p>}
                   </div>
                   <div>
                     <Label htmlFor="po-number">Purchase Order Number</Label>
                     <Select
-                      value={createForm.poNumber}
+                      value={billForm.poNumber}
                       onValueChange={(value) => {
-                        setCreateForm(f => ({ ...f, poNumber: value }));
+                        setBillForm(f => ({ ...f, poNumber: value }));
                         setErrors(e => ({ ...e, poNumber: false }));
                       }}
                     >
@@ -311,49 +447,33 @@ const PurchaseBills = () => {
                         <SelectValue placeholder="Select PO" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="po1">PO-1001</SelectItem>
-                        <SelectItem value="po2">PO-1002</SelectItem>
-                        <SelectItem value="po3">PO-1003</SelectItem>
+                        {poOptions.map(po => (
+                          <SelectItem key={po.purchaseOrderNumber} value={po.purchaseOrderNumber}>{po.purchaseOrderNumber}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                    {errors.poNumber && (
-                      <p className="text-xs text-red-500 mt-1">Please select a PO number.</p>
-                    )}
+                    {errors.poNumber && <p className="text-xs text-red-500 mt-1">Please select a PO number.</p>}
                   </div>
                   <div>
                     <Label htmlFor="bill-number">Bill Number</Label>
                     <Input
                       id="bill-number"
-                      placeholder="Enter bill number"
+                      placeholder="Auto-generated"
                       className={errors.billNumber ? "border-red-500" : ""}
-                      value={createForm.billNumber}
-                      onChange={e => {
-                        setCreateForm(f => ({ ...f, billNumber: e.target.value }));
-                        setErrors(e => ({ ...e, billNumber: false }));
-                      }}
+                      value={billForm.billNumber}
+                      readOnly
                     />
-                    {errors.billNumber && (
-                      <p className="text-xs text-red-500 mt-1">Please enter a bill number.</p>
-                    )}
+                    {errors.billNumber && <p className="text-xs text-red-500 mt-1">Bill number is required.</p>}
                   </div>
                   <div>
                     <Label htmlFor="pr-number">PR Number (Optional)</Label>
-                    <Select
-                      value={createForm.prNumber}
-                      onValueChange={(value) => {
-                        setCreateForm(f => ({ ...f, prNumber: value }));
-                        setErrors(e => ({ ...e, prNumber: false }));
-                      }}
-                    >
-                      <SelectTrigger className={errors.prNumber ? "border-red-500" : ""}>
-                        <SelectValue placeholder="Select PR (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pr1">PR-1001</SelectItem>
-                        <SelectItem value="pr2">PR-1002</SelectItem>
-                        <SelectItem value="pr3">PR-1003</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="pr-number"
+                      placeholder="Auto-filled"
+                      className={errors.prNumber ? "border-red-500" : ""}
+                      value={billForm.prNumber}
+                      readOnly
+                    />
                   </div>
                   <div>
                     <Label htmlFor="date">Date</Label>
@@ -361,37 +481,30 @@ const PurchaseBills = () => {
                       id="date"
                       type="date"
                       className={errors.date ? "border-red-500" : ""}
-                      value={createForm.date}
+                      value={billForm.date}
                       onChange={e => {
-                        setCreateForm(f => ({ ...f, date: e.target.value }));
+                        setBillForm(f => ({ ...f, date: e.target.value }));
                         setErrors(e => ({ ...e, date: false }));
                       }}
                     />
-                    {errors.date && (
-                      <p className="text-xs text-red-500 mt-1">Please select a date.</p>
-                    )}
+                    {errors.date && <p className="text-xs text-red-500 mt-1">Date is required.</p>}
                   </div>
                   <div>
                     <Label htmlFor="payment-terms">Payment Terms</Label>
                     <Select
-                      value={createForm.paymentTerms}
-                      onValueChange={(value) => {
-                        setCreateForm(f => ({ ...f, paymentTerms: value }));
-                        setErrors(e => ({ ...e, paymentTerms: false }));
-                      }}
+                      value={billForm.paymentTerms}
+                      onValueChange={handlePaymentTermsChange}
                     >
                       <SelectTrigger className={errors.paymentTerms ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select payment terms" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="net30">Net 30</SelectItem>
-                        <SelectItem value="net15">Net 15</SelectItem>
-                        <SelectItem value="immediate">Immediate</SelectItem>
+                        <SelectItem value="Net30">Net 30</SelectItem>
+                        <SelectItem value="Net15">Net 15</SelectItem>
+                        <SelectItem value="Immediate">Immediate</SelectItem>
                       </SelectContent>
                     </Select>
-                    {errors.paymentTerms && (
-                      <p className="text-xs text-red-500 mt-1">Please select payment terms.</p>
-                    )}
+                    {errors.paymentTerms && <p className="text-xs text-red-500 mt-1">Payment terms are required.</p>}
                   </div>
                 </div>
 
@@ -408,18 +521,18 @@ const PurchaseBills = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        <TableRow>
-                          <TableCell>Sample Item 1</TableCell>
-                          <TableCell>10</TableCell>
-                          <TableCell>₹100.00</TableCell>
-                          <TableCell>₹1,000.00</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell>Sample Item 2</TableCell>
-                          <TableCell>5</TableCell>
-                          <TableCell>₹200.00</TableCell>
-                          <TableCell>₹1,000.00</TableCell>
-                        </TableRow>
+                        {billForm.items && billForm.items.length > 0 ? billForm.items.map((item: any, idx: number) => (
+                          <TableRow key={idx}>
+                            <TableCell>{item.itemName || item.ItemName}</TableCell>
+                            <TableCell>{item.quantity || item.Quantity}</TableCell>
+                            <TableCell>₹{item.rate || item.Rate}</TableCell>
+                            <TableCell>₹{(item.quantity || item.Quantity) * (item.rate || item.Rate)}</TableCell>
+                          </TableRow>
+                        )) : (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-gray-400">No items found for this PO.</TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -430,8 +543,8 @@ const PurchaseBills = () => {
                   <Textarea
                     id="notes"
                     placeholder="Add internal notes..."
-                    value={createForm.notes}
-                    onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))}
+                    value={billForm.notes}
+                    onChange={e => setBillForm(f => ({ ...f, notes: e.target.value }))}
                   />
                 </div>
 
@@ -444,26 +557,22 @@ const PurchaseBills = () => {
                     <Input
                       type="file"
                       className={`${errors.document ? "border-red-500" : ""}`}
-                      onChange={(e) => {
-                        setCreateForm(f => ({ ...f, document: e.target.files?.[0] }));
-                        setErrors(e => ({ ...e, document: false }));
-                      }}
+                      onChange={handleDocumentChange}
                     />
-                    {errors.document && (
-                      <p className="text-xs text-red-500 mt-1">Document is required</p>
-                    )}
+                    {errors.document && <p className="text-xs text-red-500 mt-1">Document is required</p>}
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setIsCreateDialogOpen(false);
+                    resetForm();
+                  }}>
                     Cancel
                   </Button>
-                  <Button variant="outline" onClick={handleSaveDraft}>
-                    Save as Draft
-                  </Button>
-                  <Button onClick={handleSave}>
-                    Save
+                  {/* Save as Draft can be implemented later if needed */}
+                  <Button onClick={handleBillSave} disabled={billLoading}>
+                    {billLoading ? 'Saving...' : 'Save'}
                   </Button>
                 </div>
               </div>
@@ -492,20 +601,20 @@ const PurchaseBills = () => {
               <TableBody>
                 {paginatedBills.map((bill, index) => (
                   <TableRow 
-                    key={bill.id}
+                    key={bill.billNumber || bill.BillNumber || bill.id || index}
                     className={`hover:bg-blue-50 transition-colors duration-150 ${
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                     }`}
                   >
-                    <TableCell className="font-medium text-blue-600 py-4">{bill.id}</TableCell>
-                    <TableCell className="text-gray-700">{bill.poNumber}</TableCell>
-                    <TableCell className="text-gray-700">{bill.supplierName}</TableCell>
-                    <TableCell className="text-gray-700">{bill.date}</TableCell>
+                    <TableCell className="font-medium text-blue-600 py-4">{bill.billNumber || bill.BillNumber}</TableCell>
+                    <TableCell className="text-gray-700">{bill.poNumber || bill.PurchaseOrderNumber}</TableCell>
+                    <TableCell className="text-gray-700">{bill.supplierName || bill.Supplier}</TableCell>
+                    <TableCell className="text-gray-700">{bill.billDate || bill.BillDate}</TableCell>
                     <TableCell className="text-right font-semibold text-gray-900">
-                      {formatIndianCurrency(bill.amount)}
+                      {formatIndianCurrency(bill.amount || bill.Amount || 0)}
                     </TableCell>
-                    <TableCell>{getStatusBadge(bill.status)}</TableCell>
-                    <TableCell className="text-gray-700">{bill.dueDate}</TableCell>
+                    <TableCell>{getStatusBadge(bill.billStatus || bill.BillStatus)}</TableCell>
+                    <TableCell className="text-gray-700">{bill.billDueDate || bill.BillDueDate}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

@@ -4,6 +4,11 @@ import { PurchaseOrderState } from './types';
 import { CREATE_EXPENSE_REQUEST, CREATE_EXPENSE_SUCCESS, CREATE_EXPENSE_FAILURE } from './actions';
 import { ExpenseState } from './types';
 import { GET_EXPENSE_REQUEST, GET_EXPENSE_SUCCESS, GET_EXPENSE_FAILURE } from './actions';
+import {
+  CREATE_PURCHASE_RECEIVES_REQUEST,
+  CREATE_PURCHASE_RECEIVES_SUCCESS,
+  CREATE_PURCHASE_RECEIVES_FAILURE,
+} from './actions';
 
 const initialState: PurchaseOrderState = {
   purchareOrders: [],

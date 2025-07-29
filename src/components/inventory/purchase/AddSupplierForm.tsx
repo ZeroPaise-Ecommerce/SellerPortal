@@ -125,7 +125,7 @@ const AddSupplierForm = ({supplier, onClose }: {  supplier: Supplier; onClose: (
         {
           id: supplier?.addresses?.[0]?.id || "0",
           supplierId: supplier?.addresses?.[0]?.supplierId || 0,
-          addressType: "billing",
+          addressType: "0",
           addressLine1: addressData.billing.addressLine1,
           addressLine2: addressData.billing.addressLine2,
           city: addressData.billing.city,
@@ -136,7 +136,7 @@ const AddSupplierForm = ({supplier, onClose }: {  supplier: Supplier; onClose: (
         {
           id: supplier?.addresses?.[1]?.id || "0",
           supplierId: supplier?.addresses?.[1]?.supplierId || 0,
-          addressType: "shipping",
+          addressType: "1",
           addressLine1: addressData.shipping.addressLine1,
           addressLine2: addressData.shipping.addressLine2,
           city: addressData.shipping.city,
@@ -467,9 +467,8 @@ useEffect(() => {
             const formatted = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
              setGeneralData({ ...generalData, firstName: formatted });
              setErrors({ ...errors, firstName: false });
-  }}
-/>
-
+            }}
+          />
         </div>
         <div>
           <Label htmlFor="lastName">Last Name *</Label>

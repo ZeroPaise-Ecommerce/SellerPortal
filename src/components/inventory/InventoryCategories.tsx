@@ -567,6 +567,7 @@ const InventoryCategories = () => {
                 <label className="text-sm font-medium">Description</label>
                 <Input
                   value={editCategoryData.description}
+                  maxLength={50}
                   onChange={e => setEditCategoryData(d => ({ ...d, description: e.target.value }))}
                   className={editCategoryErrors.description ? "border border-red-500" : ""}
                 />
