@@ -42,6 +42,9 @@ import { Search, Plus, MoreHorizontal, FileText, Edit, Package, CheckCircle2, Al
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useSelector, useDispatch } from "react-redux";
+import { addPurchaseOrderRequest, createPurchaseReceivesRequest, getPurchaseOrderRequest } from "@/store/Inventory/purchase/actions";
+import CreatePurchaseOrder from "@/components/inventory/purchase/purchaseOrder/CreatePurchaseOrder";
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -65,6 +68,15 @@ const getIssuedStatusBadge = (status: string) => {
     default:
       return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{status}</span>;
   }
+};
+
+const generatePRNumber = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  return `PR-${year}${month}${day}-${randomNum}`;
 };
 
 const PurchaseReceives = () => {
@@ -98,72 +110,45 @@ const PurchaseReceives = () => {
     document: false,
   });
 
-  const receives = [
-    {
-      id: "GRN-1001",
-      prNumber: "PR-1002",
-      supplierName: "Reliance Industries Ltd.",
-      date: "20-Jun-2023",
-      items: 12,
-      status: "Complete",
-      issuedStatus: "Issued",
-      warehouse: "Main Warehouse"
-    },
-    {
-      id: "GRN-1002",
-      prNumber: "PR-1003",
-      supplierName: "Infosys Limited",
-      date: "15-Jun-2023",
-      items: 8,
-      status: "Complete",
-      issuedStatus: "Paid",
-      warehouse: "Warehouse 2"
-    },
-    {
-      id: "GRN-1003",
-      prNumber: "PR-1005",
-      supplierName: "Asian Paints Ltd.",
-      date: "07-Jun-2023",
-      items: 15,
-      status: "Complete",
-      issuedStatus: "Draft",
-      warehouse: "Main Warehouse"
-    },
-    {
-      id: "GRN-1004",
-      prNumber: "PR-1006",
-      supplierName: "Mahindra & Mahindra",
-      date: "05-Jun-2023",
-      items: 5,
-      status: "Partial",
-      issuedStatus: "Issued",
-      warehouse: "Warehouse 3"
-    },
-    {
-      id: "GRN-1005",
-      prNumber: "PR-1007",
-      supplierName: "Tata Steel Limited",
-      date: "01-Jun-2023",
-      items: 10,
-      status: "Complete",
-      issuedStatus: "Paid",
-      warehouse: "Warehouse 2"
-    },
-  ];
+  const purchaseOrders = useSelector((state: any) => state.purchase.purchareOrders || []);
+  const stageCompleted = useSelector((state: any) => state.purchase.stageCompleted);
+  const dispatch = useDispatch();
 
-  const filteredReceives = receives.filter(receipt =>
-    receipt.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    receipt.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    receipt.prNumber.toLowerCase().includes(searchTerm.toLowerCase())
+  // Add state for selected supplier and PO
+  const [selectedSupplierId, setSelectedSupplierId] = useState("");
+  const [selectedPOId, setSelectedPOId] = useState("");
+  const [prNumber, setPrNumber] = useState(generatePRNumber());
+  const [prDate, setPrDate] = useState(new Date().toISOString().split("T")[0]);
+
+  // Filter POs for selected supplier
+  const filteredPOs = purchaseOrders.filter((po: any) => String(po.supplierId) === selectedSupplierId);
+  // Get items for selected PO
+  const selectedPO = purchaseOrders.find((po: any) => String(po.purchaseOrderId) === selectedPOId);
+  const poItems = selectedPO ? selectedPO.items : [];
+
+  // PR Date validation
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const prDateObj = new Date(prDate);
+  prDateObj.setHours(0,0,0,0);
+  const prDateError = prDate === "" || prDateObj < today;
+
+  // Only show records with PRRecivedStaus (or prRecivedStaus) present
+  const filteredReceives = purchaseOrders.filter(
+    receipt => receipt.prNumber || receipt.PRNumber
+  ).filter(receipt =>
+    (receipt.id || receipt.purchaseOrderId || "").toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (receipt.supplierName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (receipt.prNumber || receipt.PRNumber || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredReceives.length / parseInt(itemsPerPage));
   const startIndex = (currentPage - 1) * parseInt(itemsPerPage);
   const paginatedReceives = filteredReceives.slice(startIndex, startIndex + parseInt(itemsPerPage));
 
-  const totalItems = receives.reduce((sum, receipt) => sum + receipt.items, 0);
-  const completeReceives = receives.filter(receipt => receipt.status === "Complete").length;
-  const partialReceives = receives.filter(receipt => receipt.status === "Partial").length;
+  const totalItems = filteredReceives.reduce((sum, receipt) => sum + (Array.isArray(receipt.items) ? receipt.items.length : 0), 0);
+  const completeReceives = filteredReceives.filter(receipt => receipt.prReceivedStatus === "Complete" && receipt.prNumber !== 'NotApplicable').length;
+  const partialReceives = filteredReceives.filter(receipt => receipt.prReceivedStatus === "Partial" && receipt.prNumber !== 'NotApplicable').length;
 
   const handleView = (receive: any) => {
     setSelectedReceive(receive);
@@ -216,6 +201,63 @@ const PurchaseReceives = () => {
     console.log("Save");
   };
 
+  // Add state for received quantities for each item
+  const [receivedQuantities, setReceivedQuantities] = useState<{ [key: number]: number }>({});
+  // Add state for PO items with receivedQuantity
+  const [poItemsWithReceivedQty, setPoItemsWithReceivedQty] = useState<any[]>([]);
+
+  // Sync poItemsWithReceivedQty with poItems when PO changes
+  React.useEffect(() => {
+    if (poItems.length > 0) {
+      setPoItemsWithReceivedQty(
+        poItems.map((item: any) => ({
+          ...item,
+          receivedQuantity: receivedQuantities[item.purchaseOrderItemId] ?? item.receivedQuantity ?? item.quantity
+        }))
+      );
+    } else {
+      setPoItemsWithReceivedQty([]);
+    }
+  }, [poItems, receivedQuantities]);
+
+  // Close dialog and refresh table after save
+  React.useEffect(() => {
+    if (stageCompleted && isCreateDialogOpen) {
+      setIsCreateDialogOpen(false);
+      // No need to dispatch here, handled in onOpenChange
+    }
+  }, [stageCompleted, isCreateDialogOpen]);
+
+  // Helper to build and dispatch createPurchaseReceives
+  const handleCreatePurchaseReceives = (isDraft: boolean) => {
+    if (!selectedPO) return;
+    const payload = {
+      PurchaseOrderId: selectedPO.purchaseOrderId,
+      PurchaseOrderNumber: selectedPO.purchaseOrderNumber,
+      TotalAmount: selectedPO.totalAmount,
+      PRNumber: prNumber,
+      PRReceivedDate: form.receivedDate || null,
+      PRDate: prDate,
+      PRInternalNotes: form.notes,
+      PRRecivedStaus: form.status === 'complete' ? 'Complete' : 'Partial',
+      Operation: 1,
+      Items: poItemsWithReceivedQty.map((item: any) => ({
+        PurchaseOrderItemId: item.purchaseOrderItemId,
+        Amount: item.amount,
+        ReceivedQuantity: item.receivedQuantity
+      })),
+      Attachments: [],
+      IsPRDraft: isDraft
+    };
+    dispatch(createPurchaseReceivesRequest(payload));
+  };
+
+  const suppliers = useSelector((state: any) => state.supplier.suppliers || []);
+  const getSupplierName = (id: string) => {
+    const supplier = suppliers.find(s => String(s.supplierId) === String(id));
+    return supplier ? (supplier.companyName || (supplier.firstName + ' ' + supplier.lastName)) : '';
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Stats */}
@@ -226,7 +268,7 @@ const PurchaseReceives = () => {
             <Truck className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-900">{receives.length}</div>
+            <div className="text-2xl font-bold text-green-900">{filteredReceives.filter(po => po.prNumber !== 'NotApplicable').length}</div>
             <p className="text-xs text-green-600 mt-1">{completeReceives} complete, {partialReceives} partial</p>
           </CardContent>
         </Card>
@@ -270,7 +312,10 @@ const PurchaseReceives = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+            setIsCreateDialogOpen(open);
+            if (!open) dispatch(getPurchaseOrderRequest());
+          }}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
                 <Plus className="h-4 w-4 mr-2" />
@@ -286,9 +331,12 @@ const PurchaseReceives = () => {
                   <div>
                     <Label htmlFor="supplier">Supplier Name</Label>
                     <Select
-                      value={form.supplierName}
+                      value={selectedSupplierId}
                       onValueChange={(value) => {
-                        setForm(f => ({ ...f, supplierName: value }));
+                        setSelectedSupplierId(value);
+                        setSelectedPOId(""); // Reset PO selection
+                        const name = getSupplierName(value);
+                        setForm(f => ({ ...f, supplierName: name }));
                         setErrors(e => ({ ...e, supplierName: false }));
                       }}
                     >
@@ -296,17 +344,20 @@ const PurchaseReceives = () => {
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="reliance">Reliance Industries Ltd.</SelectItem>
-                        <SelectItem value="infosys">Infosys Limited</SelectItem>
-                        <SelectItem value="asian">Asian Paints Ltd.</SelectItem>
+                        {suppliers.map((supplier: any) => (
+                          <SelectItem key={supplier.supplierId} value={String(supplier.supplierId)}>
+                            {supplier.companyName || (supplier.firstName + ' ' + supplier.lastName)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label htmlFor="po-number">Purchase Order Number</Label>
                     <Select
-                      value={form.poNumber}
+                      value={selectedPOId}
                       onValueChange={(value) => {
+                        setSelectedPOId(value);
                         setForm(f => ({ ...f, poNumber: value }));
                         setErrors(e => ({ ...e, poNumber: false }));
                       }}
@@ -315,15 +366,17 @@ const PurchaseReceives = () => {
                         <SelectValue placeholder="Select PO" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="po1">PO-1001</SelectItem>
-                        <SelectItem value="po2">PO-1002</SelectItem>
-                        <SelectItem value="po3">PO-1003</SelectItem>
+                        {filteredPOs.map((po: any) => (
+                          <SelectItem key={po.purchaseOrderId} value={String(po.purchaseOrderId)}>
+                            {po.purchaseOrderNumber}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label htmlFor="pr-number">PR Number</Label>
-                    <Input id="pr-number" placeholder="Auto-generated" disabled />
+                    <Input id="pr-number" value={prNumber} placeholder="Auto-generated" disabled />
                   </div>
                   <div>
                     <Label htmlFor="received-date">Received Date</Label>
@@ -334,10 +387,11 @@ const PurchaseReceives = () => {
                   </div>
                   <div>
                     <Label htmlFor="date">Date</Label>
-                    <Input id="date" type="date" className={`${errors.date ? "border border-red-500" : ""}`} value={form.date} onChange={(e) => {
-                      setForm(f => ({ ...f, date: e.target.value }));
+                    <Input id="date" type="date" className={`${errors.date || prDateError ? "border border-red-500" : ""}`} value={prDate} onChange={(e) => {
+                      setPrDate(e.target.value);
                       setErrors(e => ({ ...e, date: false }));
                     }} />
+                    {prDateError && <span className="text-xs text-red-500">Date must be today or later.</span>}
                   </div>
                   <div>
                     <Label htmlFor="status">Received Status</Label>
@@ -370,18 +424,40 @@ const PurchaseReceives = () => {
                           <TableHead>Received Qty</TableHead>
                           <TableHead>Unit Price</TableHead>
                           <TableHead>Total</TableHead>
+                          <TableHead>Description</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        <TableRow>
-                          <TableCell>Sample Item 1</TableCell>
-                          <TableCell>10</TableCell>
-                          <TableCell>
-                            <Input type="number" defaultValue="10" className={`${errors.items ? "border border-red-500" : ""}`} />
-                          </TableCell>
-                          <TableCell>₹100.00</TableCell>
-                          <TableCell>₹1,000.00</TableCell>
-                        </TableRow>
+                        {poItemsWithReceivedQty.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center text-gray-400">No items found for this PO.</TableCell>
+                          </TableRow>
+                        ) : poItemsWithReceivedQty.map((item: any, idx: number) => (
+                          <TableRow key={item.purchaseOrderItemId || idx}>
+                            <TableCell>{item.itemName}</TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min={0}
+                                value={item.receivedQuantity}
+                                onChange={e => {
+                                  const value = parseInt(e.target.value, 10) || 0;
+                                  setReceivedQuantities(qty => ({ ...qty, [item.purchaseOrderItemId]: value }));
+                                 setPoItemsWithReceivedQty(items => items.map(it =>
+                                   it.purchaseOrderItemId === item.purchaseOrderItemId
+                                     ? { ...it, receivedQuantity: value }
+                                     : it
+                                 ));
+                                }}
+                                className={`${errors.items ? "border border-red-500" : ""}`}
+                              />
+                            </TableCell>
+                            <TableCell>₹{item.rate}</TableCell>
+                            <TableCell>₹{(item.receivedQuantity * item.rate).toFixed(2)}</TableCell>
+                            <TableCell>{item.description}</TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -416,13 +492,16 @@ const PurchaseReceives = () => {
                 </div>
 
                 <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setIsCreateDialogOpen(false);
+                    dispatch(getPurchaseOrderRequest());
+                  }}>
                     Cancel
                   </Button>
-                  <Button variant="outline" onClick={handleSaveDraft}>
+                  <Button variant="outline" onClick={() => handleCreatePurchaseReceives(true)}>
                     Save as Draft
                   </Button>
-                  <Button onClick={handleSave}>
+                  <Button onClick={() => handleCreatePurchaseReceives(false)}>
                     Save
                   </Button>
                 </div>
@@ -458,23 +537,23 @@ const PurchaseReceives = () => {
                     }`}
                   >
                     <TableCell className="font-medium text-blue-600 py-4">{receipt.prNumber}</TableCell>
-                    <TableCell className="text-gray-700">{receipt.supplierName}</TableCell>
+                    <TableCell className="text-gray-700">{receipt.supplierName || getSupplierName(receipt.supplierId)}</TableCell>
                     <TableCell className="text-gray-700">
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                        {receipt.date}
+                        {receipt.purchaseOrderDate}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md font-semibold">
-                        {receipt.items}
+                        {Array.isArray(receipt.items) ? receipt.items.length : 0}
                       </span>
                     </TableCell>
-                    <TableCell>{getStatusBadge(receipt.status)}</TableCell>
-                    <TableCell>{getIssuedStatusBadge(receipt.issuedStatus)}</TableCell>
+                    <TableCell>{getStatusBadge(receipt.prReceivedStatus)}</TableCell>
+                    <TableCell>{receipt.paymentOutStatus}</TableCell>
                     <TableCell>
                       <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-md text-xs font-medium">
-                        {receipt.warehouse}
+                        {receipt.inventory}
                       </span>
                     </TableCell>
                     <TableCell>

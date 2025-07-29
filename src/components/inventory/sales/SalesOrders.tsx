@@ -175,13 +175,13 @@ const SalesOrders = () => {
     );
   }
 
-  if (!loading && orders.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">No sales orders found.</div>
-      </div>
-    );
-  }
+  // if (!loading && orders.length === 0) {
+  //   return (
+  //     <div className="flex items-center justify-center h-64">
+  //       <div className="text-lg text-gray-600">No sales orders found.</div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="space-y-6">

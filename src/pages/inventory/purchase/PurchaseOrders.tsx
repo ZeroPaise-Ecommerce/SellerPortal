@@ -29,8 +29,9 @@ import {
 import { Search, Plus, Eye, Edit, CheckCircle2, Clock, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import CreatePurchaseOrder from "@/components/inventory/purchase/CreatePurchaseOrder";
-import PurchaseOrderView from "@/components/inventory/purchase/PurchaseOrderView";
+import CreatePurchaseOrder from "@/components/inventory/purchase/purchaseOrder/CreatePurchaseOrder";
+import PurchaseOrderView from "@/components/inventory/purchase/purchaseOrder/PurchaseOrderView";
+import { useSelector } from "react-redux";
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -74,62 +75,12 @@ const PurchaseOrders = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
 
-  const orders = [
-    {
-      id: "PO-1001",
-      date: "15-Jun-2023",
-      supplierName: "Tata Steel Limited",
-      status: "Sent",
-      received: "Yes",
-      billStatus: "Paid",
-      deliveryOn: "25-Jun-2023",
-      amount: 245990
-    },
-    {
-      id: "PO-1002",
-      date: "10-Jun-2023",
-      supplierName: "Reliance Industries Ltd.",
-      status: "Draft",
-      received: "No",
-      billStatus: "Unpaid",
-      deliveryOn: "20-Jun-2023",
-      amount: 184500
-    },
-    {
-      id: "PO-1003",
-      date: "05-Jun-2023",
-      supplierName: "Infosys Limited",
-      status: "Sent",
-      received: "Partial",
-      billStatus: "Partial",
-      deliveryOn: "15-Jun-2023",
-      amount: 92750
-    },
-    {
-      id: "PO-1004",
-      date: "01-Jun-2023",
-      supplierName: "Mahindra & Mahindra",
-      status: "Sent",
-      received: "Yes",
-      billStatus: "Paid",
-      deliveryOn: "10-Jun-2023",
-      amount: 156990
-    },
-    {
-      id: "PO-1005",
-      date: "28-May-2023",
-      supplierName: "Asian Paints Ltd.",
-      status: "Draft",
-      received: "No",
-      billStatus: "Unpaid",
-      deliveryOn: "07-Jun-2023",
-      amount: 78500
-    },
-  ];
+  // Get purchase orders from Redux state
+  const orders = useSelector((state: any) => state.purchase?.purchareOrders || []);
 
   const filteredOrders = orders.filter(order =>
-    order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.supplierName.toLowerCase().includes(searchTerm.toLowerCase())
+    (order.purchaseOrderNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.supplierName || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredOrders.length / parseInt(itemsPerPage));
@@ -217,9 +168,9 @@ const PurchaseOrders = () => {
             </TableHeader>
             <TableBody>
               {paginatedOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>{order.date}</TableCell>
-                  <TableCell className="font-medium">{order.id}</TableCell>
+                <TableRow key={order.purchaseOrderId}>
+                  <TableCell>{order.purchaseOrderDate}</TableCell>
+                  <TableCell className="font-medium">{order.purchaseOrderNumber}</TableCell>
                   <TableCell>{order.supplierName}</TableCell>
                   <TableCell>{getStatusBadge(order.status)}</TableCell>
                   <TableCell>{getReceivedBadge(order.received)}</TableCell>
@@ -235,7 +186,7 @@ const PurchaseOrders = () => {
                   </TableCell>
                   <TableCell>{order.deliveryOn}</TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatIndianCurrency(order.amount)}
+                    {formatIndianCurrency(order.totalAmount)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -243,7 +194,7 @@ const PurchaseOrders = () => {
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8"
-                        onClick={() => handleViewPO(order.id)}
+                        onClick={() => handleViewPO(order.purchaseOrderId)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -251,7 +202,7 @@ const PurchaseOrders = () => {
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8"
-                        onClick={() => handleEditPO(order.id)}
+                        onClick={() => handleEditPO(order.purchaseOrderId)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>

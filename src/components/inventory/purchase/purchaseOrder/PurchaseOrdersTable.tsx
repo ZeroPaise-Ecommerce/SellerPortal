@@ -81,8 +81,8 @@ const PurchaseOrdersTable = ({ onCreatePO, onViewPO, onEditPO }: PurchaseOrdersT
   }, [dispatch]);
 
   const filteredOrders = orders.filter(order =>
-    order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.supplierName.toLowerCase().includes(searchTerm.toLowerCase())
+    (order.purchaseOrderNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (order.supplierName || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredOrders.length / parseInt(itemsPerPage));
@@ -90,7 +90,7 @@ const PurchaseOrdersTable = ({ onCreatePO, onViewPO, onEditPO }: PurchaseOrdersT
   const paginatedOrders = filteredOrders.slice(startIndex, startIndex + parseInt(itemsPerPage));
 
   // Calculate stats
-  const totalAmount = orders.reduce((sum, order) => sum + order.amount, 0);
+  const totalAmount = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
   const sentOrders = orders.filter(order => order.status === "Sent").length;
   const pendingReceives = orders.filter(order => order.received === "No").length;
 
@@ -165,30 +165,30 @@ const PurchaseOrdersTable = ({ onCreatePO, onViewPO, onEditPO }: PurchaseOrdersT
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50 border-b border-gray-200">
-                  <TableHead className="font-semibold text-gray-700 py-4">Date</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Order ID</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Supplier Name</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-4">Order Date</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Order Number</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Supplier</TableHead>
                   <TableHead className="font-semibold text-gray-700">Status</TableHead>
                   <TableHead className="font-semibold text-gray-700">Received</TableHead>
                   <TableHead className="font-semibold text-gray-700">Bill Status</TableHead>
                   <TableHead className="font-semibold text-gray-700">Delivery On</TableHead>
-                  <TableHead className="font-semibold text-gray-700 text-right">Amount</TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-right">Total Amount</TableHead>
                   <TableHead className="font-semibold text-gray-700 text-center w-32">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedOrders.map((order, index) => (
                   <TableRow 
-                    key={order.id}
+                    key={order.purchaseOrderId}
                     className={`hover:bg-blue-50 transition-colors duration-150 ${
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                     }`}
                   >
-                    <TableCell className="py-4 text-gray-700">{order.all}</TableCell>
-                    <TableCell className="font-medium text-blue-600">{order.id}</TableCell>
+                    <TableCell className="py-4 text-gray-700">{order.purchaseOrderDate}</TableCell>
+                    <TableCell className="font-medium text-blue-600">{order.purchaseOrderNumber}</TableCell>
                     <TableCell className="text-gray-700">{order.supplierName}</TableCell>
                     <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell>{getReceivedBadge(order.received)}</TableCell>
+                    <TableCell>{getReceivedBadge(order.prReceivedStatus)}</TableCell>
                     <TableCell>
                       <span className={cn(
                         "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border",
@@ -201,7 +201,7 @@ const PurchaseOrdersTable = ({ onCreatePO, onViewPO, onEditPO }: PurchaseOrdersT
                     </TableCell>
                     <TableCell className="text-gray-700">{order.expectedDeliveryDate}</TableCell>
                     <TableCell className="text-right font-semibold text-gray-900">
-                      {formatIndianCurrency(order.amount)}
+                      {formatIndianCurrency(order.totalAmount)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-2">
@@ -209,7 +209,7 @@ const PurchaseOrdersTable = ({ onCreatePO, onViewPO, onEditPO }: PurchaseOrdersT
                           variant="ghost" 
                           size="sm" 
                           className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
-                          onClick={() => onViewPO(order.id)}
+                          onClick={() => onViewPO(order.purchaseOrderId)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -217,7 +217,7 @@ const PurchaseOrdersTable = ({ onCreatePO, onViewPO, onEditPO }: PurchaseOrdersT
                           variant="ghost" 
                           size="sm" 
                           className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-600"
-                          onClick={() => onEditPO(order.id)}
+                          onClick={() => onEditPO(order.purchaseOrderId)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
