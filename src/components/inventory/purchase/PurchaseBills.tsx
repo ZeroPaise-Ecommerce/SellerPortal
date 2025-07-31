@@ -45,6 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { addPurchaseOrderRequest } from '@/store/Inventory/purchase/actions';
+import { getPurchaseOrderRequest } from '@/store/Inventory/purchase/actions';
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -78,7 +79,7 @@ const PurchaseBills = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedBill, setSelectedBill] = useState<any>(null);
 
-  const [createForm, setCreateForm] = useState({
+  const [billForm, setBillForm] = useState({
     supplier: "",
     poNumber: "",
     billNumber: "",
@@ -106,64 +107,41 @@ const PurchaseBills = () => {
 
   // Redux: Get purchase orders
   const purchaseOrders = useSelector((state: any) => state.purchase?.purchareOrders || []);
+  const suppliers = useSelector((state: any) => state.supplier?.suppliers || []);
 
-  // State for filtered bills and form
-  const [filteredBills, setFilteredBills] = useState<any[]>([]);
-  const [billForm, setBillForm] = useState({
-    supplier: '',
-    poNumber: '',
-    billNumber: '',
-    date: '',
-    amount: '',
-    prNumber: '',
-    paymentTerms: '',
-    items: [],
-    notes: '',
-    document: null as File | null,
-  });
-
-  // Filter bills on mount and when purchaseOrders changes
-  useEffect(() => {
-    const filtered = purchaseOrders.filter((po: any) => po.billNumber && po.billNumber !== 'NotApplicable');
-    setFilteredBills(filtered);
-  }, [purchaseOrders]);
-
-  // Helper: get unique suppliers from filteredBills
-  const uniqueSuppliers = Array.from(new Set(filteredBills.map(bill => bill.supplierName)));
+  // Add filteredBills as a derived variable
+  const filteredBills = purchaseOrders.filter((po: any) => po.billNumber && po.billNumber !== 'NotApplicable');
 
   // State for PO options and selected PO
-  const [poOptions, setPoOptions] = useState<any[]>([]);
   const [selectedPO, setSelectedPO] = useState<any>(null);
 
-  // When supplier changes, update PO options
-  useEffect(() => {
-    if (billForm.supplier) {
-      const pos = filteredBills.filter(bill => bill.supplierName === billForm.supplier);
-      setPoOptions(pos);
-    } else {
-      setPoOptions([]);
-    }
-    setBillForm(f => ({ ...f, poNumber: '', prNumber: '', items: [] }));
-    setSelectedPO(null);
-  }, [billForm.supplier, filteredBills]);
+  // Add filteredPOs after billForm definition
+  const filteredPOs = purchaseOrders.filter(
+    (po: any) => String(po.supplierId) === String(billForm.supplier)
+  );
+
+  const [lastPoNumber, setLastPoNumber] = useState<string | null>(null);
 
   // When PO changes, update PR number, items, and auto-generate Bill Number
   useEffect(() => {
-    if (billForm.poNumber) {
-      const po = poOptions.find(po => po.purchaseOrderNumber === billForm.poNumber);
+    if (billForm.poNumber && billForm.poNumber !== lastPoNumber) {
+      const po = filteredPOs.find(po => po.purchaseOrderNumber === billForm.poNumber);
       setSelectedPO(po);
+      const newBillNumber = po ? `BILL-${po.purchaseOrderNumber}-${Math.floor(Math.random() * 1000)}` : '';
       setBillForm(f => ({
         ...f,
         prNumber: po ? po.purchaseOrderNumber : '',
-        billNumber: po ? `BILL-${po.purchaseOrderNumber}-${Math.floor(Math.random() * 1000)}` : '',
+        billNumber: newBillNumber,
         items: po ? (po.items || []) : [],
         amount: po ? po.totalAmount : '',
       }));
-    } else {
+      setLastPoNumber(billForm.poNumber);
+    } else if (!billForm.poNumber) {
       setSelectedPO(null);
       setBillForm(f => ({ ...f, prNumber: '', billNumber: '', items: [], amount: '' }));
+      setLastPoNumber(null);
     }
-  }, [billForm.poNumber, poOptions]);
+  }, [billForm.poNumber, filteredPOs]);
 
   // Payment terms: remove spaces
   const handlePaymentTermsChange = (value: string) => {
@@ -240,11 +218,11 @@ const PurchaseBills = () => {
   useEffect(() => {
     if (stageCompleted && isCreateDialogOpen) {
       if (!billError) {
-        setSuccessMsg('Bill created successfully!');
         setIsCreateDialogOpen(false);
         setBillForm({
           supplier: '', poNumber: '', billNumber: '', date: '', amount: '', prNumber: '', paymentTerms: '', items: [], notes: '', document: null,
         });
+        dispatch(getPurchaseOrderRequest());
       } else {
         setErrorMsg('Error creating bill: ' + billError);
       }
@@ -274,13 +252,26 @@ const PurchaseBills = () => {
     if (successMsg) window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [successMsg]);
 
-  const totalPages = Math.ceil(filteredBills.length / parseInt(itemsPerPage));
-  const startIndex = (currentPage - 1) * parseInt(itemsPerPage);
-  const paginatedBills = filteredBills.slice(startIndex, startIndex + parseInt(itemsPerPage));
+  // Add a filteredAndSearchedBills variable
+  const filteredAndSearchedBills = filteredBills.filter(bill => {
+    const search = searchTerm.toLowerCase();
+    return (
+      (bill.billNumber || bill.BillNumber || '').toLowerCase().includes(search) ||
+      (bill.poNumber || bill.purchaseOrderNumber || '').toLowerCase().includes(search) ||
+      (bill.supplierName || bill.Supplier || '').toLowerCase().includes(search) ||
+      (bill.billDate || bill.BillDate || '').toLowerCase().includes(search)
+    );
+  });
 
-  const totalAmount = filteredBills.reduce((sum, bill) => sum + (bill.amount || 0), 0);
-  const paidBills = filteredBills.filter(bill => bill.billStatus === "Paid").length;
-  const pendingBills = filteredBills.filter(bill => bill.billStatus === "Pending").length;
+  const totalPages = Math.ceil(filteredAndSearchedBills.length / parseInt(itemsPerPage));
+  const startIndex = (currentPage - 1) * parseInt(itemsPerPage);
+  const paginatedBills = filteredAndSearchedBills.slice(startIndex, startIndex + parseInt(itemsPerPage));
+
+  // Update stats to use filteredAndSearchedBills
+  const totalAmount = filteredAndSearchedBills.reduce((sum, bill) => sum + (bill.totalAmount || bill.TotalAmount || 0), 0);
+  const averageBill = filteredAndSearchedBills.length ? totalAmount / filteredAndSearchedBills.length : 0;
+  const paidBills = filteredAndSearchedBills.filter(bill => bill.billStatus === "Paid").length;
+  const pendingBills = filteredAndSearchedBills.filter(bill => bill.billStatus === "Pending").length;
 
   // Reset form and errors
   const resetForm = () => {
@@ -291,7 +282,6 @@ const PurchaseBills = () => {
       supplier: false, poNumber: false, billNumber: false, date: false, amount: false, prNumber: false, paymentTerms: false, items: false, notes: false, document: false,
     });
     setSelectedPO(null);
-    setPoOptions([]);
   };
 
   // View/Edit dialog stubs (future expansion)
@@ -302,40 +292,6 @@ const PurchaseBills = () => {
   const handleEdit = (bill: any) => {
     setSelectedBill(bill);
     setIsEditDialogOpen(true);
-  };
-
-  const handleSaveDraft = () => {
-    const newErrors = {
-      supplier: !createForm.supplier,
-      poNumber: !createForm.poNumber,
-      billNumber: !createForm.billNumber,
-      date: !createForm.date,
-      amount: !createForm.amount,
-      prNumber: false,
-      paymentTerms: !createForm.paymentTerms,
-      items: false,
-      notes: false,
-      document: !createForm.document,
-    };
-    setErrors(newErrors);
-    console.log("Save Draft");
-  };
-
-  const handleSave = () => {
-    const newErrors = {
-      supplier: !createForm.supplier,
-      poNumber: !createForm.poNumber,
-      billNumber: !createForm.billNumber,
-      date: !createForm.date,
-      amount: !createForm.amount,
-      prNumber: false,
-      paymentTerms: !createForm.paymentTerms,
-      items: false,
-      notes: false,
-      document: !createForm.document,
-    };
-    setErrors(newErrors);
-    console.log("Save");
   };
 
   // Show loading, error, or success after all variables are defined
@@ -378,7 +334,7 @@ const PurchaseBills = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-900">
-              {formatIndianCurrency(filteredBills.length ? totalAmount / filteredBills.length : 0)}
+              {formatIndianCurrency(averageBill)}
             </div>
             <p className="text-xs text-purple-600 mt-1">Per bill</p>
           </CardContent>
@@ -419,16 +375,19 @@ const PurchaseBills = () => {
                     <Select
                       value={billForm.supplier}
                       onValueChange={(value) => {
-                        setBillForm(f => ({ ...f, supplier: value }));
+                        setBillForm(f => ({ ...f, supplier: value, poNumber: '', prNumber: '', items: [] }));
                         setErrors(e => ({ ...e, supplier: false }));
+                        setSelectedPO(null);
                       }}
                     >
                       <SelectTrigger className={errors.supplier ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
-                        {uniqueSuppliers.map(supplier => (
-                          <SelectItem key={supplier} value={supplier}>{supplier}</SelectItem>
+                        {suppliers.map((supplier: any) => (
+                          <SelectItem key={supplier.supplierId} value={String(supplier.supplierId)}>
+                            {supplier.companyName}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -447,8 +406,10 @@ const PurchaseBills = () => {
                         <SelectValue placeholder="Select PO" />
                       </SelectTrigger>
                       <SelectContent>
-                        {poOptions.map(po => (
-                          <SelectItem key={po.purchaseOrderNumber} value={po.purchaseOrderNumber}>{po.purchaseOrderNumber}</SelectItem>
+                        {filteredPOs.map(po => (
+                          <SelectItem key={po.purchaseOrderNumber} value={po.purchaseOrderNumber}>
+                            {po.purchaseOrderNumber}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -607,11 +568,11 @@ const PurchaseBills = () => {
                     }`}
                   >
                     <TableCell className="font-medium text-blue-600 py-4">{bill.billNumber || bill.BillNumber}</TableCell>
-                    <TableCell className="text-gray-700">{bill.poNumber || bill.PurchaseOrderNumber}</TableCell>
+                    <TableCell className="text-gray-700">{bill.poNumber || bill.purchaseOrderNumber}</TableCell>
                     <TableCell className="text-gray-700">{bill.supplierName || bill.Supplier}</TableCell>
                     <TableCell className="text-gray-700">{bill.billDate || bill.BillDate}</TableCell>
                     <TableCell className="text-right font-semibold text-gray-900">
-                      {formatIndianCurrency(bill.amount || bill.Amount || 0)}
+                      {formatIndianCurrency(bill.totalAmount || bill.TotalAmount || 0)}
                     </TableCell>
                     <TableCell>{getStatusBadge(bill.billStatus || bill.BillStatus)}</TableCell>
                     <TableCell className="text-gray-700">{bill.billDueDate || bill.BillDueDate}</TableCell>

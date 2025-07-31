@@ -42,6 +42,9 @@ import { Search, Plus, MoreHorizontal, FileText, Edit, CheckCircle2, Clock, Aler
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react';
+import { getPurchaseReturnRequest, addPurchaseReturnRequest } from '@/store/Inventory/purchaseReturn/actions';
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -73,6 +76,28 @@ const PurchaseReturns = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState<any>(null);
 
+  const dispatch = useDispatch();
+  const { purchaseReturns, loading, error, stageCompleted } = useSelector((state: any) => state.purchaseReturn);
+  // Add selectors for suppliers and purchaseOrders if available
+  const suppliers = useSelector((state: any) => state.supplier?.suppliers || []);
+  const purchaseOrders = useSelector((state: any) => state.purchase?.purchareOrders || []);
+
+  useEffect(() => {
+    dispatch(getPurchaseReturnRequest());
+  }, [dispatch]);
+
+  // Add effect to close dialog and refresh list after creation
+  useEffect(() => {
+    if (stageCompleted && isCreateDialogOpen) {
+      setIsCreateDialogOpen(false);
+      setCreateForm({
+        supplier: '', poID: '', returnDate: '', reason: '', items: [], notes: ''
+      });
+      dispatch(getPurchaseReturnRequest());
+      dispatch({ type: 'RESET_STAGE_COMPLETED' });
+    }
+  }, [stageCompleted, isCreateDialogOpen, dispatch]);
+
   const [createForm, setCreateForm] = useState({
     supplier: "",
     poID: "",
@@ -91,68 +116,42 @@ const PurchaseReturns = () => {
     notes: false,
   });
 
-  const returns = [
-    {
-      id: "PR-1001",
-      poID: "PO-1002",
-      supplierName: "Reliance Industries Ltd.",
-      date: "23-Jun-2023",
-      amount: 24500,
-      status: "Completed",
-      reason: "Defective Items"
-    },
-    {
-      id: "PR-1002",
-      poID: "PO-1003",
-      supplierName: "Infosys Limited",
-      date: "18-Jun-2023",
-      amount: 12750,
-      status: "Processing",
-      reason: "Wrong Specifications"
-    },
-    {
-      id: "PR-1003",
-      poID: "PO-1005",
-      supplierName: "Asian Paints Ltd.",
-      date: "12-Jun-2023",
-      amount: 8500,
-      status: "Completed",
-      reason: "Damaged in Transit"
-    },
-    {
-      id: "PR-1004",
-      poID: "PO-1006",
-      supplierName: "Mahindra & Mahindra",
-      date: "08-Jun-2023",
-      amount: 15750,
-      status: "Rejected",
-      reason: "Late Return Request"
-    },
-    {
-      id: "PR-1005",
-      poID: "PO-1007",
-      supplierName: "Tata Steel Limited",
-      date: "05-Jun-2023",
-      amount: 32500,
-      status: "Completed",
-      reason: "Excess Quantity"
-    },
-  ];
+  // Remove manual itemEntry state and add poItems state
+  const [poItems, setPoItems] = useState<any[]>([]);
+  const [itemError, setItemError] = useState('');
 
-  const filteredReturns = returns.filter(returnItem =>
-    returnItem.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    returnItem.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    returnItem.poID.toLowerCase().includes(searchTerm.toLowerCase())
+  // When PO changes, load items from the selected purchase order
+  useEffect(() => {
+    const po = purchaseOrders.find((po: any) => po.purchaseOrderNumber === createForm.poID);
+    if (po && po.items) {
+      // Map items to include a returnQty field
+      setPoItems(po.items.map((item: any) => ({
+        ...item,
+        returnQty: 0,
+        receivedQty: item.quantity || item.Quantity || 0,
+        unitPrice: item.rate || item.Rate || 0,
+        itemName: item.itemName || item.ItemName || '',
+      })));
+    } else {
+      setPoItems([]);
+    }
+  }, [createForm.poID, purchaseOrders]);
+
+  // Filter and search
+  const filteredReturns = purchaseReturns.filter((returnItem: any) =>
+    (returnItem.purchseReturnNumber || returnItem.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (returnItem.supplierName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (returnItem.purchaseOrderNumber || returnItem.poID || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredReturns.length / parseInt(itemsPerPage));
   const startIndex = (currentPage - 1) * parseInt(itemsPerPage);
   const paginatedReturns = filteredReturns.slice(startIndex, startIndex + parseInt(itemsPerPage));
 
-  const totalAmount = returns.reduce((sum, returnItem) => sum + returnItem.amount, 0);
-  const completedReturns = returns.filter(returnItem => returnItem.status === "Completed").length;
-  const processingReturns = returns.filter(returnItem => returnItem.status === "Processing").length;
-  const rejectedReturns = returns.filter(returnItem => returnItem.status === "Rejected").length;
+  const totalAmount = filteredReturns.reduce((sum: number, returnItem: any) => sum + (returnItem.totalAmount || returnItem.amount || 0), 0);
+  const completedReturns = filteredReturns.filter((returnItem: any) => returnItem.status === "Completed").length;
+  const processingReturns = filteredReturns.filter((returnItem: any) => returnItem.status === "Processing").length;
+  const rejectedReturns = filteredReturns.filter((returnItem: any) => returnItem.status === "Rejected").length;
 
   const handleView = (returnItem: any) => {
     setSelectedReturn(returnItem);
@@ -162,6 +161,91 @@ const PurchaseReturns = () => {
   const handleEdit = (returnItem: any) => {
     setSelectedReturn(returnItem);
     setIsEditDialogOpen(true);
+  };
+
+  // Add edit form state
+  const [editForm, setEditForm] = useState<any>(null);
+
+  // When opening the edit dialog, populate editForm
+  useEffect(() => {
+    if (isEditDialogOpen && selectedReturn) {
+      setEditForm({ ...selectedReturn });
+    }
+  }, [isEditDialogOpen, selectedReturn]);
+
+  // On successful update, close dialog and refresh
+  useEffect(() => {
+    if (stageCompleted && isEditDialogOpen) {
+      setIsEditDialogOpen(false);
+      setEditForm(null);
+      dispatch(getPurchaseReturnRequest());
+      dispatch({ type: 'RESET_STAGE_COMPLETED' });
+    }
+  }, [stageCompleted, isEditDialogOpen, dispatch]);
+
+  const handleCreateReturn = () => {
+    // Validate required fields
+    const newErrors = {
+      supplier: !createForm.supplier,
+      poID: !createForm.poID,
+      returnDate: !createForm.returnDate,
+      reason: !createForm.reason,
+      items: poItems.filter((item: any) => item.returnQty > 0).length === 0,
+      notes: !createForm.notes,
+    };
+    setErrors(newErrors);
+    setItemError('');
+    if (Object.values(newErrors).some(Boolean)) {
+      if (newErrors.items) setItemError('Please enter a return quantity for at least one item.');
+      return;
+    }
+    // Additional validation: returnQty <= receivedQty and >= 0
+    for (const item of poItems) {
+      if (item.returnQty > item.receivedQty) {
+        setItemError(`Return quantity for '${item.itemName}' cannot exceed received quantity (${item.receivedQty}).`);
+        return;
+      }
+      if (item.returnQty < 0) {
+        setItemError(`Return quantity for '${item.itemName}' cannot be negative.`);
+        return;
+      }
+    }
+    // Map supplier and PO
+    const supplierObj = suppliers.find((s: any) => s.companyName === createForm.supplier);
+    const poObj = purchaseOrders.find((po: any) => po.purchaseOrderNumber === createForm.poID);
+    // Generate return number (simple example)
+    const returnNumber = `PR-${Math.floor(1000 + Math.random() * 9000)}`;
+    // Build items array
+    const items = poItems.filter((item: any) => item.returnQty > 0).map((item: any) => ({
+      itemName: item.itemName,
+      receivedQty: item.receivedQty,
+      returnQty: item.returnQty,
+      unitPrice: item.unitPrice,
+      total: item.returnQty * item.unitPrice,
+    }));
+    // Calculate totalAmount
+    const totalAmount = items.reduce((sum: number, item: any) => sum + (item.total || 0), 0);
+    // Convert returnDate to UTC ISO string
+    let returnDateUtc = '';
+    if (createForm.returnDate) {
+      const date = new Date(createForm.returnDate);
+      returnDateUtc = date.toISOString();
+    }
+    // Build payload (PurchaseReturnDto)
+    const payload = {
+      supplierId: supplierObj?.supplierId || 0,
+      supplierName: createForm.supplier,
+      purchaseOrderId: poObj?.purchaseOrderId || 0,
+      purchaseOrderNumber: createForm.poID,
+      purchseReturnNumber: returnNumber,
+      returnDate: returnDateUtc,
+      returnReason: createForm.reason,
+      returnNotes: createForm.notes,
+      totalAmount,
+      operation: 0,
+      items,
+    };
+    dispatch(addPurchaseReturnRequest(payload));
   };
 
   return (
@@ -174,7 +258,7 @@ const PurchaseReturns = () => {
             <RotateCcw className="h-4 w-4 text-amber-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-900">{returns.length}</div>
+            <div className="text-2xl font-bold text-amber-900">{purchaseReturns.length}</div>
             <p className="text-xs text-amber-600 mt-1">{completedReturns} completed, {processingReturns} processing</p>
           </CardContent>
         </Card>
@@ -241,9 +325,9 @@ const PurchaseReturns = () => {
                         <SelectValue placeholder="Select supplier" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="reliance">Reliance Industries Ltd.</SelectItem>
-                        <SelectItem value="infosys">Infosys Limited</SelectItem>
-                        <SelectItem value="asian">Asian Paints Ltd.</SelectItem>
+                        {suppliers.map((supplier: any) => (
+                          <SelectItem key={supplier.supplierId} value={supplier.companyName}>{supplier.companyName}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {errors.supplier && (
@@ -260,9 +344,9 @@ const PurchaseReturns = () => {
                         <SelectValue placeholder="Select PO" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="PO-1001">PO-1001</SelectItem>
-                        <SelectItem value="PO-1002">PO-1002</SelectItem>
-                        <SelectItem value="PO-1003">PO-1003</SelectItem>
+                        {purchaseOrders.map((po: any) => (
+                          <SelectItem key={po.purchaseOrderId} value={po.purchaseOrderNumber}>{po.purchaseOrderNumber}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {errors.poID && (
@@ -306,7 +390,7 @@ const PurchaseReturns = () => {
 
                 <div>
                   <Label>Items to Return</Label>
-                  <div className="mt-2 border rounded-lg">
+                  <div className="mt-2">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -318,15 +402,27 @@ const PurchaseReturns = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        <TableRow>
-                          <TableCell>Sample Item 1</TableCell>
-                          <TableCell>10</TableCell>
-                          <TableCell>
-                            <Input type="number" defaultValue="2" className="w-20" />
-                          </TableCell>
-                          <TableCell>₹100.00</TableCell>
-                          <TableCell>₹200.00</TableCell>
-                        </TableRow>
+                        {poItems.map((item: any, idx: number) => (
+                          <TableRow key={idx}>
+                            <TableCell>{item.itemName}</TableCell>
+                            <TableCell>{item.receivedQty}</TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={item.receivedQty}
+                                value={item.returnQty}
+                                onChange={e => {
+                                  const value = Number(e.target.value);
+                                  setPoItems(items => items.map((it, i) => i === idx ? { ...it, returnQty: value } : it));
+                                }}
+                                className="w-24"
+                              />
+                            </TableCell>
+                            <TableCell>{formatIndianCurrency(item.unitPrice)}</TableCell>
+                            <TableCell>{formatIndianCurrency(item.returnQty * item.unitPrice)}</TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -351,27 +447,15 @@ const PurchaseReturns = () => {
                     Cancel
                   </Button>
                   <Button
-                    onClick={() => {
-                      // Validate required fields
-                      const newErrors = {
-                        supplier: !createForm.supplier,
-                        poID: !createForm.poID,
-                        returnDate: !createForm.returnDate,
-                        reason: !createForm.reason,
-                        items: false, // Not validating items for now
-                        notes: !createForm.notes,
-                      };
-                      setErrors(newErrors);
-                      // If any error, do not proceed
-                      if (Object.values(newErrors).some(Boolean)) return;
-                      // ...submit logic here
-                      setIsCreateDialogOpen(false);
-                    }}
+                    onClick={handleCreateReturn}
+                    disabled={loading}
                   >
-                    Create Return
+                    {loading ? 'Saving...' : 'Create Return'}
                   </Button>
                 </div>
               </div>
+              {error && <div className="text-red-600 p-2">{error}</div>}
+              {itemError && <div className="text-red-600 p-2">{itemError}</div>}
             </DialogContent>
           </Dialog>
         </div>
@@ -402,15 +486,15 @@ const PurchaseReturns = () => {
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                     }`}
                   >
-                    <TableCell className="font-medium text-blue-600 py-4">{returnItem.id}</TableCell>
-                    <TableCell className="text-gray-700">{returnItem.poID}</TableCell>
+                    <TableCell className="font-medium text-blue-600 py-4">{returnItem.purchseReturnNumber}</TableCell>
+                    <TableCell className="text-gray-700">{returnItem.purchaseOrderNumber}</TableCell>
                     <TableCell className="text-gray-700">{returnItem.supplierName}</TableCell>
-                    <TableCell className="text-gray-700">{returnItem.date}</TableCell>
+                    <TableCell className="text-gray-700">{returnItem.returnDate}</TableCell>
                     <TableCell className="text-right font-semibold text-gray-900">
-                      {formatIndianCurrency(returnItem.amount)}
+                      {formatIndianCurrency(returnItem.totalAmount)}
                     </TableCell>
-                    <TableCell>{getStatusBadge(returnItem.status)}</TableCell>
-                    <TableCell className="text-gray-600">{returnItem.reason}</TableCell>
+                    <TableCell>{getStatusBadge(returnItem.status? returnItem.status : 'Not Applicavle')}</TableCell>
+                    <TableCell className="text-gray-600">{returnItem.returnReason}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -489,46 +573,44 @@ const PurchaseReturns = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Return - {selectedReturn?.id}</DialogTitle>
+            <DialogTitle>Edit Return - {editForm?.purchseReturnNumber || editForm?.id}</DialogTitle>
           </DialogHeader>
-          {selectedReturn && (
+          {editForm && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-status">Status</Label>
-                  <Select defaultValue={selectedReturn.status.toLowerCase()}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="processing">Processing</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="edit-reason">Reason</Label>
+                  <Input
+                    id="edit-reason"
+                    value={editForm.returnReason || ''}
+                    onChange={e => setEditForm((f: any) => ({ ...f, returnReason: e.target.value }))}
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="edit-reason">Reason</Label>
-                  <Select defaultValue={selectedReturn.reason.toLowerCase().replace(' ', '-')}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="defective-items">Defective Items</SelectItem>
-                      <SelectItem value="wrong-specifications">Wrong Specifications</SelectItem>
-                      <SelectItem value="damaged-in-transit">Damaged in Transit</SelectItem>
-                      <SelectItem value="excess-quantity">Excess Quantity</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="edit-notes">Notes</Label>
+                  <Textarea
+                    id="edit-notes"
+                    value={editForm.returnNotes || ''}
+                    onChange={e => setEditForm((f: any) => ({ ...f, returnNotes: e.target.value }))}
+                  />
                 </div>
               </div>
-
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button>
-                  Save Changes
+                <Button
+                  onClick={() => {
+                    // Build payload for update
+                    const payload = {
+                      ...editForm,
+                      operation: 'Update',
+                    };
+                    dispatch(addPurchaseReturnRequest(payload));
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
             </div>
