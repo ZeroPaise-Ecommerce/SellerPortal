@@ -1,12 +1,16 @@
-// Category types
 export interface CategoryDto {
-  categoryId: number;
+  id: number;
   categoryName: string;
-  parentCategoryId?: number;
+  parentCategoryId?: number | null;
+  parentCategory?: CategoryDto | null;
+  subCategories?: CategoryDto[] | null;
   description: string;
   displayOrder: number;
   isActive: boolean;
-  operation: number; // OperationType as number
+  createdOn?: string;
+  updatedOn?: string;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface CategoryState {

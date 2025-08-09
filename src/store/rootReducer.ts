@@ -6,10 +6,12 @@ import { expenseReducer } from './Inventory/purchase/reducer';
 import { customerReducer } from './Inventory/customer/reducer';
 import { salesOrderReducer } from './Inventory/salesOrder/reducer';
 import { purchaseReturnReducer } from './Inventory/purchaseReturn/reducer';
+import { categoryReducer } from './Inventory/category/reducer';
 
 const rootReducer = combineReducers({
   product: productReducer,
   supplier: supplierReducer, // Assuming you have a supplierReducer
+  category: categoryReducer,
   customer: customerReducer, // Add customer reducer
   salesOrder: salesOrderReducer, // Add sales order reducer
   purchase: PurchaseOrderReducer,

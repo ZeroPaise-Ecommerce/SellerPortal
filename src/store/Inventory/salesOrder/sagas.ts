@@ -21,7 +21,7 @@ const baseurl = import.meta.env.VITE_API_GATEWAY_URL;
 // Create Sales Order Saga
 function* createSalesOrderSaga(action: any) {
   try {
-    const salesOrder: SalesOrder = yield call(CreateActions, action.payload, 'SalesOrder', 'create', 'Inventory');
+    const salesOrder: SalesOrder = yield call(CreateActions, action.payload, 'SalesOrder', 'save', 'Inventory');
     yield put({ type: CREATE_SALES_ORDER_SUCCESS, payload: salesOrder });
   } catch (error: any) {
     yield put({ type: CREATE_SALES_ORDER_FAILURE, payload: error.message });

@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react';
 
 interface AddCategoryFormProps {
   isOpen: boolean;
@@ -17,19 +19,32 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({ isOpen, onClose, onSa
   const [categoryName, setCategoryName] = useState("");
   const [description, setDescription] = useState("");
   const [parentCategory, setParentCategory] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSave = () => {
-    if (categoryName.trim()) {
-      onSave({ 
-        name: categoryName.trim(), 
-        description: description.trim(),
-        parentCategory: parentCategory
-      });
-      setCategoryName("");
-      setDescription("");
-      setParentCategory("");
-      onClose();
+  const dispatch = useDispatch();
+  const { categories, loading } = useSelector((state: any) => state.category || { categories: [], loading: false });
+
+  useEffect(() => {
+    if (isOpen) {
+      dispatch({ type: 'FETCH_CATEGORY_REQUEST' });
     }
+  }, [isOpen, dispatch]);
+
+  const handleSaveCategory = () => {
+    if (!categoryName.trim()) {
+      setError("Category name is required.");
+      return;
+    }
+    setError("");
+    onSave({
+      name: categoryName.trim(),
+      description: description.trim(),
+      parentCategory: parentCategory
+    });
+    setCategoryName("");
+    setDescription("");
+    setParentCategory("");
+    onClose();
   };
 
   return (
@@ -40,7 +55,7 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({ isOpen, onClose, onSa
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="categoryName">Category Name *</Label>
+            <Label htmlFor="categoryName">Category Name asasa*</Label>
             <Input
               id="categoryName"
               value={categoryName}
@@ -55,9 +70,13 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({ isOpen, onClose, onSa
                 <SelectValue placeholder="Select parent category (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="electronics">Electronics</SelectItem>
-                <SelectItem value="clothing">Clothing</SelectItem>
-                <SelectItem value="accessories">Accessories</SelectItem>
+                {loading ? (
+                  <SelectItem value="" disabled>Loading...</SelectItem>
+                ) : (
+                  categories.map((cat: any) => (
+                    <SelectItem key={cat.id || cat.categoryId || cat.name} value={cat.name}>{cat.name}</SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -76,9 +95,10 @@ const AddCategoryForm: React.FC<AddCategoryFormProps> = ({ isOpen, onClose, onSa
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!categoryName.trim()}>
+          <Button onClick={handleSaveCategory} disabled={!categoryName.trim()}>
             Add Category
           </Button>
+          {error && <div className="text-red-600 p-2">{error}</div>}
         </DialogFooter>
       </DialogContent>
     </Dialog>
