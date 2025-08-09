@@ -3,24 +3,30 @@ import { call, put, takeLatest } from 'redux-saga/effects';
 import {
   GET_CATEGORY_REQUEST, GET_CATEGORY_SUCCESS, GET_CATEGORY_FAILURE,
   UPDATE_CATEGORY_REQUEST, UPDATE_CATEGORY_SUCCESS, UPDATE_CATEGORY_FAILURE,
-  getCategorySuccess, getCategoryFailure, updateCategorySuccess, updateCategoryFailure
+  getCategorySuccess, getCategoryFailure, updateCategorySuccess, updateCategoryFailure, getCategoryRequest
 } from './actions';
 
 function* fetchCategories() {
   try {
     const response = yield call(api.GetDataFromService, 'Inventory', 'category', 'all', null);
-    yield put(getCategorySuccess(response));
+    console.log('[Saga] API Response:', response); 
+    yield put(getCategorySuccess({ data: response.data }));
   } catch (error: any) {
+    console.log('[Saga] Error:', error.message); 
     yield put(getCategoryFailure(error.message));
   }
 }
 
 function* updateCategory(action: any) {
   try {
+    console.log("Called with", action.payload);
+    // Call your API to update the category
     const response = yield call(api.CreateActions, action.payload, 'category', 'Save', 'Inventory');
     yield put(updateCategorySuccess(response));
-  } catch (error: any) {
-    yield put(updateCategoryFailure(error.message));
+    // Fetch categories after successful update
+    yield put(getCategoryRequest());
+  } catch (error) {
+    yield put(updateCategoryFailure(error));
   }
 }
 

@@ -40,6 +40,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, Plus, Filter, Eye, Edit, MoreHorizontal, Tag, TrendingUp, Package, Calendar } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { useEffect } from "react";
+import { updateCategoryRequest, getCategoryRequest } from '@/store/Inventory/category/actions';
 
 const formatIndianCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -85,63 +88,19 @@ const InventoryCategories = () => {
     status: false,
   });
 
-  const categories = [
-    {
-      id: "CAT001",
-      name: "Electronics",
-      sales: 2456789,
-      stock: 1247,
-      stockValue: 3456789,
-      added: "2023-05-12",
-      description: "Electronic gadgets and devices including smartphones, laptops, accessories",
-      itemCount: 147,
-      status: "Active"
-    },
-    {
-      id: "CAT002", 
-      name: "Accessories",
-      sales: 987456,
-      stock: 2398,
-      stockValue: 1234567,
-      added: "2023-05-15",
-      description: "Device accessories like cables, cases, chargers, and more",
-      itemCount: 98,
-      status: "Active"
-    },
-    {
-      id: "CAT003",
-      name: "Clothing",
-      sales: 3567890,
-      stock: 1856,
-      stockValue: 4567890,
-      added: "2023-06-02",
-      description: "Fashion apparel and clothing items for all age groups",
-      itemCount: 235,
-      status: "Active"
-    },
-    {
-      id: "CAT004",
-      name: "Home Appliances",
-      sales: 1876543,
-      stock: 456,
-      stockValue: 2345678,
-      added: "2023-06-10",
-      description: "Household electronic appliances and kitchen equipment",
-      itemCount: 56,
-      status: "Active"
-    },
-    {
-      id: "CAT005",
-      name: "Books",
-      sales: 234567,
-      stock: 1123,
-      stockValue: 567890,
-      added: "2023-06-25",
-      description: "Books, magazines, educational materials and publications",
-      itemCount: 112,
-      status: "Active"
-    },
-  ];
+  // Add state for the form fields
+  const [categoryName, setCategoryName] = useState("");
+  const [parentCategory, setParentCategory] = useState("__none__");
+  const [description, setDescription] = useState("");
+  const [displayOrder, setDisplayOrder] = useState(0);
+  const [isActive, setIsActive] = useState(true);
+
+  const dispatch = useDispatch();
+  const { categories, loading } = useSelector((state: any) => state.category || { categories: [], loading: false });
+
+  useEffect(() => {
+    dispatch(getCategoryRequest());
+  }, [dispatch]);
 
   const totalItems = categories.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -197,6 +156,31 @@ const InventoryCategories = () => {
     // Update logic here (API call or state update)
     setIsEditModalOpen(false);
     setEditCategoryErrors({ name: false, description: false, status: false });
+  };
+
+  const handleSaveCategory = () => {
+    console.log('[UI] Dispatching updateCategoryRequest');
+    if (loading) return;
+    // Build payload for CategoryDto
+    const payload = {
+      categoryId: 0, // For new category, or use edit state if editing
+      categoryName: categoryName.trim(),
+      parentCategoryId: parentCategory === "__none__" ? null : Number(parentCategory),
+      description: description.trim(),
+      displayOrder: Number(displayOrder),
+      isActive,
+      operation: 0,
+    };
+    dispatch(updateCategoryRequest(payload));
+    // Reset form
+    // setCategoryName("");
+    // setParentCategory("__none__");
+    // setDescription("");
+    // setDisplayOrder(0);
+    // setIsActive(true);
+    // Refresh category list
+    // dispatch(getCategoryRequest());
+    setIsAddCategoryOpen(false)
   };
 
   return (
@@ -281,11 +265,11 @@ const InventoryCategories = () => {
               </DialogHeader>
               <div className="grid grid-cols-2 gap-4 py-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Category Name *</label>
+                  <label className="text-sm font-medium">Category sdName *</label>
                   <Input
                     placeholder="Enter category name"
-                    value={addCategoryData.name}
-                    onChange={e => setAddCategoryData(d => ({ ...d, name: e.target.value }))}
+                    value={categoryName}
+                    onChange={e => setCategoryName(e.target.value)}
                     className={addCategoryErrors.name ? "border border-red-500" : ""}
                   />
                   {addCategoryErrors.name && (
@@ -295,16 +279,21 @@ const InventoryCategories = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Parent Category</label>
                   <Select
-                    value={addCategoryData.parent}
-                    onValueChange={value => setAddCategoryData(d => ({ ...d, parent: value }))}
+                    value={parentCategory === "" || parentCategory === undefined ? "__none__" : parentCategory}
+                    onValueChange={val => setParentCategory(val === "__none__" ? "" : val)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select parent category" />
+                      <SelectValue placeholder="Select parent category (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="electronics">Electronics</SelectItem>
-                      <SelectItem value="clothing">Clothing</SelectItem>
-                      <SelectItem value="accessories">Accessories</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
+                      {loading ? (
+                        <SelectItem value="__loading__" disabled>Loading...</SelectItem>
+                      ) : (
+                        categories.filter((cat: any) => cat.parentCategoryId === null).map((cat: any) => (
+                          <SelectItem key={cat.id} value={String(cat.id)}>{cat.categoryName}</SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -312,8 +301,8 @@ const InventoryCategories = () => {
                   <label className="text-sm font-medium">Description</label>
                   <Input
                     placeholder="Enter category description"
-                    value={addCategoryData.description}
-                    onChange={e => setAddCategoryData(d => ({ ...d, description: e.target.value }))}
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
                     className={addCategoryErrors.description ? "border border-red-500" : ""}
                   />
                   {addCategoryErrors.description && (
@@ -325,15 +314,15 @@ const InventoryCategories = () => {
                   <Input
                     type="number"
                     placeholder="1"
-                    value={addCategoryData.displayOrder}
-                    onChange={e => setAddCategoryData(d => ({ ...d, displayOrder: e.target.value }))}
+                    value={displayOrder}
+                    onChange={e => setDisplayOrder(Number(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
                   <Select
-                    value={addCategoryData.status}
-                    onValueChange={value => setAddCategoryData(d => ({ ...d, status: value }))}
+                    value={isActive ? "active" : "inactive"}
+                    onValueChange={value => setIsActive(value === "active")}
                     defaultValue="active"
                   >
                     <SelectTrigger className={addCategoryErrors.status ? "border border-red-500" : ""}>
@@ -351,7 +340,9 @@ const InventoryCategories = () => {
               </div>
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddCategorySave}>Save Category</Button>
+                <Button onClick={handleSaveCategory} disabled={loading}>
+                  {loading ? "Saving..." : "Save"}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -382,14 +373,14 @@ const InventoryCategories = () => {
                   >
                     <TableCell className="py-4">
                       <div>
-                        <div className="font-medium text-blue-600">{category.name}</div>
+                        <div className="font-medium text-blue-600">{category.categoryName}</div>
                         <div className="text-sm text-gray-500">{category.itemCount} items</div>
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-semibold text-gray-900">
                       {formatIndianCurrency(category.sales)}
                     </TableCell>
-                    <TableCell className="text-right font-medium">{category.stock.toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-medium">{category.stock? category.stock.toLocaleString() : 0}</TableCell>
                     <TableCell className="text-gray-700">{category.added}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-2">

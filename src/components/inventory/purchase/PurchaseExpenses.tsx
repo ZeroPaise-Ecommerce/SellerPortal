@@ -62,6 +62,7 @@ const PurchaseExpenses = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
   const [isCreateCategoryDialogOpen, setIsCreateCategoryDialogOpen] = useState(false);
+  const [expenseError, setExpenseError] = useState('');
 
   const [createForm, setCreateForm] = useState({
     category: "",
@@ -113,8 +114,38 @@ const PurchaseExpenses = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleCreateExpense = (expense: any) => {
-    dispatch(createExpenseRequest(expense));
+  const handleCreateExpense = () => {
+    // Validate required fields
+    const newErrors = {
+      category: !createForm.category,
+      amount: !createForm.amount || isNaN(Number(createForm.amount)) || Number(createForm.amount) <= 0,
+      date: !createForm.date,
+      paymentMethod: !createForm.paymentMethod,
+      account: !createForm.account,
+      description: !createForm.description,
+    };
+    setErrors(newErrors);
+    setExpenseError('');
+    if (Object.values(newErrors).some(Boolean)) {
+      if (newErrors.amount) setExpenseError('Amount must be a positive number.');
+      return;
+    }
+    // Convert date to UTC ISO string
+    let dateUtc = '';
+    if (createForm.date) {
+      const date = new Date(createForm.date);
+      dateUtc = date.toISOString();
+    }
+    // Build payload
+    const payload = {
+      ...createForm,
+      amount: Number(createForm.amount),
+      date: dateUtc,
+      operation: 0,
+    };
+    dispatch(createExpenseRequest(payload));
+    setIsCreateDialogOpen(false);
+    setCreateForm({ category: '', amount: '', date: '', paymentMethod: '', account: '', description: '' });
   };
 
   return (
@@ -173,10 +204,10 @@ const PurchaseExpenses = () => {
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+              {/* <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Expense
-              </Button>
+              </Button> */}
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
@@ -303,24 +334,12 @@ const PurchaseExpenses = () => {
                     Cancel
                   </Button>
                   <Button
-                    onClick={() => {
-                      // Validate required fields
-                      const newErrors = {
-                        category: !createForm.category,
-                        amount: !createForm.amount,
-                        date: !createForm.date,
-                        paymentMethod: !createForm.paymentMethod,
-                        account: !createForm.account,
-                        description: !createForm.description,
-                      };
-                      setErrors(newErrors);
-                      if (Object.values(newErrors).some(Boolean)) return;
-                      // ...submit logic here
-                      setIsCreateDialogOpen(false);
-                    }}
+                    onClick={handleCreateExpense}
+                    disabled={expenseState.loading}
                   >
-                    Save Expense
+                    {expenseState.loading ? 'Saving...' : 'Save Expense'}
                   </Button>
+                  {expenseError && <div className="text-red-600 p-2">{expenseError}</div>}
                 </div>
               </div>
             </DialogContent>

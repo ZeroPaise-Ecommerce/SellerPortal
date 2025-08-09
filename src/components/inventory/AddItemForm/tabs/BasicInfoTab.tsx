@@ -12,6 +12,8 @@ const BasicInfoTab = ({
   setBrand,
   category,
   setCategory,
+  subCategory,
+  setSubCategory,
   description,
   setDescription,
   shortDescription,
@@ -111,9 +113,9 @@ const BasicInfoTab = ({
             onChange={(e) => setCategory(e.target.value)}
             className="input flex-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
           >
-            {categories.map((cat) => (
-              <option key={cat.value} value={cat.value}>
-                {cat.name}
+            {categories.filter((cat) => cat.parentCategoryId === null).map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.categoryName}
               </option>
             ))}
           </select>
@@ -124,6 +126,34 @@ const BasicInfoTab = ({
           >
             +
           </Button>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="subCategories">Sub Categories *</label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {/* Dynamic badges for selected categories */}
+        </div>
+        <div className="flex gap-2">
+          <select
+            id="subCategories"
+            value={subCategory}
+            onChange={(e) => setSubCategory(e.target.value)}
+            className="input flex-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
+          >
+            {categories.filter((cat) => cat.parentCategoryId === parseInt(category)).map((subCat) => (
+              <option key={subCat.id} value={subCat.id}>
+                {subCat.categoryName}
+              </option>
+            ))}
+          </select>
+          {/* <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowAddCategory(true)}
+          >
+            +
+          </Button> */}
         </div>
       </div>
 

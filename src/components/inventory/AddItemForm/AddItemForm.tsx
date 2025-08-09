@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Info,
   Palette,
@@ -29,6 +29,7 @@ import VisibilityTab from "./tabs/VisibilityTab";
 import { any, boolean } from "zod";
 import { createPricing } from "@/store/Inventory/product/sagas";
 import { VariantOption, VariantOptionState, VariantCombination, VariantRequest} from "@/store/Inventory/product/types";
+import { getCategoryRequest } from "@/store/Inventory/category/actions";
 
 // --- START: Inlined Form Components (AddBrandForm, AddCategoryForm, AddCountryForm) ---
 // These components were previously in separate files but are inlined here to resolve import errors.
@@ -288,6 +289,11 @@ const AddItemForm = ({ onClose }) => {
   const [websiteDesc, setWebsiteDesc] = useState("");
   const [websiteSpecs, setWebsiteSpecs] = useState("");
 
+  useEffect(() => {
+    dispatch(getCategoryRequest());
+  }, [dispatch]);
+
+
   const generateSku = (attributes: Record<string, string>): string => {
     return Object.values(attributes).join('-').toUpperCase();
   };
@@ -369,11 +375,13 @@ const AddItemForm = ({ onClose }) => {
     { name: "Samsung", value: "samsung" },
     { name: "OnePlus", value: "oneplus" }
   ]);
-  const [categories, setCategories] = useState([
-    { name: "Electronics", value: "electronics" },
-    { name: "Accessories", value: "accessories" },
-    { name: "Clothing", value: "clothing" }
-  ]);
+  // const [categories, setCategories] = useState([
+  //   { name: "Electronics1", value: "electronics" },
+  //   { name: "Accessories", value: "accessories" },
+  //   { name: "Clothing", value: "clothing" }
+  // ]);
+  const { categories, loading } = useSelector((state: any) => state.category || { categories: [], loading: false });
+  const [categoriesValues, setcategoriesValues] = useState(categories);
   const [countries, setCountries] = useState([
     { name: "India", value: "india" },
     { name: "China", value: "china" },
@@ -401,7 +409,7 @@ const AddItemForm = ({ onClose }) => {
 
   const handleAddCategory = (category: { name: string; description: string; parentCategory: string }) => {
     const newCategory = { name: category.name, value: category.name.toLowerCase().replace(/\s+/g, '_') };
-    setCategories([...categories, newCategory]);
+    setcategoriesValues([...categoriesValues, newCategory]);
   };
 
   const handleAddCountry = (country: { name: string; code: string }) => {

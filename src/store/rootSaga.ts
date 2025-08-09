@@ -6,17 +6,19 @@ import { customerSaga } from './Inventory/customer/sagas';
 import { PurchaseSage } from './Inventory/purchase/sagas';
 import { salesOrderSaga } from './Inventory/salesOrder/sagas';
 import { purchaseReturnSaga } from './Inventory/purchaseReturn/sagas';
+import { CategorySaga } from './Inventory/category/sagas';
 
 export default function* rootSaga() {
   yield all([
      productSaga(),
      productSaga1(),
-    //supplierSaga(), // Assuming you have a supplierSaga
+   //supplierSaga(), // Assuming you have a supplierSaga
     SupplierSaga(), // Assuming you have a SupplierSaga1
     customerSaga(), // Add customer saga
     PurchaseSage(), // Purchase order saga
     salesOrderSaga(), // Sales order saga
     purchaseReturnSaga(), // <-- Add purchaseReturn saga
+    CategorySaga(), // <-- Add category saga
     // Add other sagas here
   ]);
 }

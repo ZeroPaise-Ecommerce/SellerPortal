@@ -1,3 +1,5 @@
+import { CategoryDto } from "./types";
+
 // Category actions
 export const GET_CATEGORY_REQUEST = 'GET_CATEGORY_REQUEST';
 export const GET_CATEGORY_SUCCESS = 'GET_CATEGORY_SUCCESS';
@@ -8,7 +10,10 @@ export const UPDATE_CATEGORY_SUCCESS = 'UPDATE_CATEGORY_SUCCESS';
 export const UPDATE_CATEGORY_FAILURE = 'UPDATE_CATEGORY_FAILURE';
 
 export const getCategoryRequest = () => ({ type: GET_CATEGORY_REQUEST });
-export const getCategorySuccess = (data: any) => ({ type: GET_CATEGORY_SUCCESS, payload: { data } });
+export const getCategorySuccess = (payload: { data: CategoryDto[] }) => ({
+    type: GET_CATEGORY_SUCCESS,
+    payload,
+  });
 export const getCategoryFailure = (error: string) => ({ type: GET_CATEGORY_FAILURE, payload: error });
 
 export const updateCategoryRequest = (payload: any) => ({ type: UPDATE_CATEGORY_REQUEST, payload });
