@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import AddCustomerForm from "./AddCustomerForm";
+import useAppDispatch from "@/hooks/useAppDispatch";
+import useAppSelector from "@/hooks/useAppSelector";
+import { createSalesOrderRequest } from "@/store/Inventory/salesOrder/actions";
+import { toast } from "@/components/ui/use-toast";
 
 interface CreateSalesOrderFormProps {
   order?: any;
@@ -39,6 +43,8 @@ interface CreateSalesOrderFormProps {
 }
 
 const CreateSalesOrderForm = ({ order, isEdit = false, onClose, customers, products }: CreateSalesOrderFormProps) => {
+  const dispatch = useAppDispatch();
+  const { salesOrders, loading, error } = useAppSelector((state) => state.salesOrder);
   const [customerName, setCustomerName] = useState(order?.customerName || "");
   const [salesOrderNumber, setSalesOrderNumber] = useState(order?.id || "SO-" + Date.now());
   const [inventory, setInventory] = useState(order?.inventory || "");
@@ -49,19 +55,31 @@ const CreateSalesOrderForm = ({ order, isEdit = false, onClose, customers, produ
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
   const [itemSearch, setItemSearch] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [baselineCount, setBaselineCount] = useState<number>(Array.isArray(salesOrders) ? salesOrders.length : 0);
 
   const [items, setItems] = useState([
     {
       id: 1,
-      name: "Product A",
+      productId: undefined as string | undefined,
+      name: "",
       description: "",
       qty: 1,
-      rate: 1000,
+      rate: 0,
       discount: 0,
       discountType: "percentage",
-      amount: 1000
+      amount: 0
     }
   ]);
+
+  const getProductId = (p: any): string => {
+    const id = p?.productId ?? p?.itemId ?? p?.id ?? "";
+    return typeof id === "string" ? id : String(id);
+  };
+
+  const getProductName = (p: any): string => p?.productName ?? p?.name ?? "";
+  const getProductSku = (p: any): string => p?.productSKU ?? p?.sku ?? "";
+  const getProductSellPrice = (p: any): number => p?.sellPrice ?? p?.sellingPrice ?? p?.buyPrice ?? 0;
 
   const formatIndianCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -83,6 +101,7 @@ const CreateSalesOrderForm = ({ order, isEdit = false, onClose, customers, produ
   const addItem = () => {
     setItems([...items, {
       id: items.length + 1,
+      productId: undefined as string | undefined,
       name: "",
       description: "",
       qty: 1,
@@ -114,6 +133,113 @@ const CreateSalesOrderForm = ({ order, isEdit = false, onClose, customers, produ
       return item;
     }));
   };
+
+  const handleSelectProduct = (rowId: number, selectedProductId: string) => {
+    const selected = (products || []).find(p => getProductId(p) === selectedProductId);
+    if (!selected) {
+      return;
+    }
+    setItems(prev => prev.map(item => {
+      if (item.id !== rowId) return item as any;
+      const updated = {
+        ...item,
+        productId: getProductId(selected),
+        name: getProductName(selected),
+        rate: getProductSellPrice(selected),
+      } as any;
+      updated.amount = calculateAmount(updated.qty, updated.rate, updated.discount, updated.discountType);
+      return updated;
+    }));
+  };
+
+  const filteredProducts = useMemo(() => {
+    const term = (itemSearch || "").trim().toLowerCase();
+    if (!term) return products || [];
+    return (products || []).filter((p) => {
+      const nm = getProductName(p).toLowerCase();
+      const sku = getProductSku(p).toLowerCase();
+      return nm.includes(term) || sku.includes(term);
+    });
+  }, [products, itemSearch]);
+
+  const getSelectedCustomerId = (): number => {
+    const name = (customerName || "").trim();
+    const match = (customers || []).find((c: any) => {
+      const nm = `${c.firstName || ""} ${c.lastName || ""}`.trim();
+      return nm === name;
+    });
+    const id = match?.customerId ?? match?.id ?? 0;
+    return typeof id === "number" ? id : Number(id) || 0;
+  };
+
+  const buildPayload = () => {
+    const itemsPayload = items.map((it) => ({
+      id: it.id,
+      salesOrderId: 0,
+      itemName: it.name,
+      account: "",
+      quantity: it.qty,
+      rate: it.rate,
+      gst: "18%",
+      amount: it.amount,
+      description: it.description,
+      productId: (() => {
+        const pid = (it as any).productId;
+        if (typeof pid === "number") return pid;
+        if (typeof pid === "string" && pid.trim() !== "") {
+          const n = Number(pid);
+          return Number.isFinite(n) ? n : pid;
+        }
+        return 0;
+      })(),
+      variantId: 0,
+    }));
+
+    return {
+      //id: null,
+      salesOrderId: 0,
+      salesOrderNumber,
+      purchaseOrderNumber: 0,
+      customerId: getSelectedCustomerId(),
+      customerName,
+      inventory,
+      date,
+      purchaseOrderDate: date,
+      referenceNumber,
+      paymentPolicy,
+      notesToSupplier: notesToCustomer,
+      attachmentFileName: selectedFile?.name || "",
+      status: "Draft",
+      totalAmount: total,
+      totalRefundAmount: 0,
+      items: itemsPayload,
+      salesInvoices: [],
+      salesReturns: [],
+    } as any;
+  };
+
+  const handleSaveOrder = () => {
+    const payload = buildPayload();
+    setBaselineCount(Array.isArray(salesOrders) ? salesOrders.length : 0);
+    setIsSubmitting(true);
+    dispatch(createSalesOrderRequest(payload));
+  };
+
+  useEffect(() => {
+    if (!isSubmitting) return;
+    if (loading) return;
+    if (error) {
+      toast({ title: "Failed to create order", description: String(error) });
+      setIsSubmitting(false);
+      return;
+    }
+    const currentCount = Array.isArray(salesOrders) ? salesOrders.length : 0;
+    if (currentCount > baselineCount) {
+      toast({ title: "Order created", description: "Sales order saved successfully" });
+      setIsSubmitting(false);
+      onClose();
+    }
+  }, [loading, error, salesOrders, isSubmitting, baselineCount, onClose]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -276,17 +402,25 @@ const CreateSalesOrderForm = ({ order, isEdit = false, onClose, customers, produ
               {items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
-                    <Select 
-                      value={item.name} 
-                      onValueChange={(value) => updateItem(item.id, 'name', value)}
+                    <Select
+                      value={(item as any).productId || ""}
+                      onValueChange={(value) => handleSelectProduct(item.id, value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select item" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Product A">Product A</SelectItem>
-                        <SelectItem value="Product B">Product B</SelectItem>
-                        <SelectItem value="Product C">Product C</SelectItem>
+                        {filteredProducts && filteredProducts.length > 0 ? (
+                          filteredProducts.map((prod) => (
+                            <SelectItem key={getProductId(prod)} value={getProductId(prod)}>
+                              {getProductName(prod)} {getProductSku(prod) ? `(${getProductSku(prod)})` : ""}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>
+                            No products found
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </TableCell>
@@ -436,8 +570,8 @@ const CreateSalesOrderForm = ({ order, isEdit = false, onClose, customers, produ
         <Button variant="outline">
           Save and Send
         </Button>
-        <Button onClick={onClose}>
-          {isEdit ? "Update Order" : "Save Order"}
+        <Button onClick={handleSaveOrder} disabled={isSubmitting || loading}>
+          {isSubmitting || loading ? "Saving..." : isEdit ? "Update Order" : "Save Order"}
         </Button>
       </div>
     </div>

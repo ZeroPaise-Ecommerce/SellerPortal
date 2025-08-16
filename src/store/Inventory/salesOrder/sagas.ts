@@ -37,7 +37,7 @@ function* getSalesOrdersSaga() {
     yield put({ type: GET_SALES_ORDERS_FAILURE, payload: error.message });
   }
 }
-
+  
 // Update Sales Order Saga
 function* updateSalesOrderSaga(action: any) {
   try {
