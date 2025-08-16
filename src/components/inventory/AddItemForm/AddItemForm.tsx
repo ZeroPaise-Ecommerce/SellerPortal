@@ -29,7 +29,7 @@ import VisibilityTab from "./tabs/VisibilityTab";
 import { any, boolean } from "zod";
 import { createPricing } from "@/store/Inventory/product/sagas";
 import { VariantOption, VariantOptionState, VariantCombination, VariantRequest} from "@/store/Inventory/product/types";
-import { getBrandRequest, getCategoryRequest } from "@/store/Inventory/category/actions";
+import { getBrandRequest, getCategoryRequest, saveBrandRequest } from "@/store/Inventory/category/actions";
 
 // --- START: Inlined Form Components (AddBrandForm, AddCategoryForm, AddCountryForm) ---
 // These components were previously in separate files but are inlined here to resolve import errors.
@@ -54,8 +54,11 @@ const AddBrandForm = ({ isOpen, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md space-y-4">
-        <h2 className="text-xl font-semibold">Add New Brand</h2>
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md space-y-4 border-4 border-red-500">
+        <h2 className="text-xl font-semibold text-red-600">Add New Brand (DEBUG)</h2>
+        <div className="text-xs text-gray-500 mb-2">
+          isOpen: {isOpen.toString()}, brandName: "{brandName}"
+        </div>
         <div className="space-y-2">
           <label htmlFor="newBrandName" className="block text-sm font-medium text-gray-700">Brand Name</label>
           <input
@@ -75,7 +78,10 @@ const AddBrandForm = ({ isOpen, onClose, onSave }) => {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={() => {
+            console.log('Save Brand button clicked');
+            handleSave();
+          }}>
             Save Brand
           </Button>
         </div>
@@ -124,7 +130,9 @@ const AddCategoryForm = ({ isOpen, onClose, onSave }) => {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
+          <Button  onClick={() => {
+            handleSave();
+          }}>
             Save Category
           </Button>
         </div>
@@ -291,6 +299,18 @@ const AddItemForm = ({ onClose }) => {
   const [websiteDesc, setWebsiteDesc] = useState("");
   const [websiteSpecs, setWebsiteSpecs] = useState("");
 
+  const steps = [
+    { id: "basic", label: "Basic Information", icon: Info },
+    { id: "variants", label: "Variance", icon: Palette },
+    { id: "pricing", label: "Pricing and Taxing", icon: IndianRupee },
+    { id: "inventory", label: "Warehousing", icon: Warehouse },
+    { id: "channels", label: "Listing", icon: Share2 },
+    { id: "media", label: "Media", icon: Camera },
+    { id: "seo", label: "SEO", icon: Search },
+    { id: "visibility", label: "Visibility", icon: Search },
+    { id: "additional", label: "Additional Settings", icon: Settings },
+  ];
+
   useEffect(() => {
     dispatch(getCategoryRequest());
   }, [dispatch]);
@@ -303,6 +323,13 @@ const AddItemForm = ({ onClose }) => {
   useEffect(() => {
     setProductSku(generateProductSKU());
   }, []);
+
+  // Debug logging for form states
+  useEffect(() => {
+  }, [showAddBrand]);
+
+  useEffect(() => {
+  }, [showAddCategory]);
 
   const generateSku = (attributes: Record<string, string>): string => {
     return Object.values(attributes).join('-').toUpperCase();
@@ -409,22 +436,23 @@ const AddItemForm = ({ onClose }) => {
     );
   };
 
-  const handleAddBrand = (brand: { name: string; description: string }) => {
-    const newBrand = { name: brand.name, value: brand.name.toLowerCase().replace(/\s+/g, '_') };
-    setBrandValues([...brands, newBrand]);
+  const handleAddBrand = (brandName: string) => {
+    const newBrand = { name: brandName, value: brandName.toLowerCase().replace(/\s+/g, '_') };
+    setBrandValues([...brandValues, newBrand]);
+    dispatch(saveBrandRequest({ brandName }));
   };
 
-  const handleAddCategory = (category: { name: string; description: string; parentCategory: string }) => {
-    const newCategory = { name: category.name, value: category.name.toLowerCase().replace(/\s+/g, '_') };
+  const handleAddCategory = (categoryName: string) => {
+    const newCategory = { name: categoryName, value: categoryName.toLowerCase().replace(/\s+/g, '_') };
     setcategoriesValues([...categoriesValues, newCategory]);
   };
 
-  const handleAddCountry = (country: { name: string; code: string }) => {
-    const newCountry = { name: country.name, value: country.name.toLowerCase().replace(/\s+/g, '_') };
+  const handleAddCountry = (countryName: string) => {
+    const newCountry = { name: countryName, value: countryName.toLowerCase().replace(/\s+/g, '_') };
     setCountries([...countries, newCountry]);
   };
 
-   const renderStepContent = () => {
+  const renderStepContent = () => {
     const step = steps[currentStep];
     switch (step.id) {
       case "basic":
@@ -583,18 +611,6 @@ const AddItemForm = ({ onClose }) => {
         return null;
     }
   };
-
-  const steps = [
-    { id: "basic", label: "Basic Information", icon: Info },
-    { id: "variants", label: "Variance", icon: Palette },
-    { id: "pricing", label: "Pricing and Taxing", icon: IndianRupee },
-    { id: "inventory", label: "Warehousing", icon: Warehouse },
-    { id: "channels", label: "Listing", icon: Share2 },
-    { id: "media", label: "Media", icon: Camera },
-    { id: "seo", label: "SEO", icon: Search },
-    { id: "visibility", label: "Visibility", icon: Search },
-    { id: "additional", label: "Additional Settings", icon: Settings },
-  ];
 
   const handleNext = () => {
     const currentStepId = steps[currentStep].id;
@@ -850,20 +866,8 @@ const AddItemForm = ({ onClose }) => {
     //dispatch(addProductRequest(payload));
   };
 
-  const addSegments = [
-    { id: "basic", label: "Basic Information", icon: Info },
-    { id: "variants", label: "Variance", icon: Palette },
-    { id: "pricing", label: "Pricing and Taxing", icon: IndianRupee },
-    { id: "inventory", label: "Warehousing", icon: Warehouse },
-    { id: "channels", label: "Listing", icon: Share2 },
-    { id: "media", label: "Media", icon: Camera },
-    { id: "seo", label: "SEO", icon: Search },
-    { id: "visibility", label: "Visibility", icon: Search },
-    { id: "additional", label: "Additional Settings", icon: Settings },
-  ];
-
   const handleOnClick = (step: string) => {
-    switch (steps[currentStep].id) {
+    switch (step) {
       case "basic":
         handleBasicInfoNext();
         break;
@@ -910,12 +914,16 @@ const AddItemForm = ({ onClose }) => {
       {/* Inline form components remain */}
       <AddBrandForm
         isOpen={showAddBrand}
-        onClose={() => setShowAddBrand(false)}
+        onClose={() => {
+          setShowAddBrand(false);
+        }}
         onSave={handleAddBrand}
       />
       <AddCategoryForm
         isOpen={showAddCategory}
-        onClose={() => setShowAddCategory(false)}
+        onClose={() => {
+          setShowAddCategory(false);
+        }}
         onSave={handleAddCategory}
       />
       <AddCountryForm

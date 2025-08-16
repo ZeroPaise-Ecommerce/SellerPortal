@@ -125,6 +125,7 @@ const BasicInfoTab = ({
             variant="outline"
             size="icon"
             onClick={() => setShowAddCategory(true)}
+            style={{ display: "none" }}
           >
             +
           </Button>

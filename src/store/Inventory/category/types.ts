@@ -25,3 +25,7 @@ export interface BrandDto {
   id: number;
   brandName: string;
 }
+
+export interface CreateBrandDto {
+  brandName: string;
+}
