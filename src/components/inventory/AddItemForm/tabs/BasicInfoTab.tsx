@@ -23,7 +23,9 @@ const BasicInfoTab = ({
   setShowAddBrand,
   categories,
   setShowAddCategory,
-}) => {
+}) => {  
+
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
@@ -85,8 +87,8 @@ const BasicInfoTab = ({
               className="input flex-1 w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
             >
               {brands.map((b) => (
-                <option key={b.value} value={b.value}>
-                  {b.name}
+                <option key={b.id} value={b.id}>
+                  {b.brandName}
                 </option>
               ))}
             </select>

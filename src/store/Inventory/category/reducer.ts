@@ -1,10 +1,14 @@
 import { CategoryState } from './types';
 import {
   GET_CATEGORY_REQUEST, GET_CATEGORY_SUCCESS, GET_CATEGORY_FAILURE,
-  UPDATE_CATEGORY_REQUEST, UPDATE_CATEGORY_SUCCESS, UPDATE_CATEGORY_FAILURE
+  UPDATE_CATEGORY_REQUEST, UPDATE_CATEGORY_SUCCESS, UPDATE_CATEGORY_FAILURE,
+  GET_BRAND_REQUEST,
+  GET_BRAND_SUCCESS,
+  GET_BRAND_FAILURE
 } from './actions';
 const initialState: CategoryState = {
   categories: [],
+  brands: [],
   loading: false,
   error: null,
   stageCompleted: false
@@ -15,6 +19,7 @@ export const categoryReducer = (state = initialState, action: any): CategoryStat
   switch (action.type) {
     case GET_CATEGORY_REQUEST:
     case UPDATE_CATEGORY_REQUEST:
+    case GET_BRAND_REQUEST:
       return { ...state, loading: true, error: null, stageCompleted: false };
 
       case GET_CATEGORY_SUCCESS:
@@ -24,6 +29,14 @@ export const categoryReducer = (state = initialState, action: any): CategoryStat
           categories: action.payload.data,
           stageCompleted: true,
         };
+
+        case GET_BRAND_SUCCESS:
+          return {
+            ...state,
+            loading: false,
+            brands: action.payload.data,
+            stageCompleted: true,
+          };
 
     case UPDATE_CATEGORY_SUCCESS:
       return {
@@ -37,6 +50,7 @@ export const categoryReducer = (state = initialState, action: any): CategoryStat
 
     case GET_CATEGORY_FAILURE:
     case UPDATE_CATEGORY_FAILURE:
+    case GET_BRAND_FAILURE:
       return { ...state, loading: false, error: action.payload, stageCompleted: true };
 
     default:

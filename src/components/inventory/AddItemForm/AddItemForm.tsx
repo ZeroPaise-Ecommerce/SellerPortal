@@ -29,7 +29,7 @@ import VisibilityTab from "./tabs/VisibilityTab";
 import { any, boolean } from "zod";
 import { createPricing } from "@/store/Inventory/product/sagas";
 import { VariantOption, VariantOptionState, VariantCombination, VariantRequest} from "@/store/Inventory/product/types";
-import { getCategoryRequest } from "@/store/Inventory/category/actions";
+import { getBrandRequest, getCategoryRequest } from "@/store/Inventory/category/actions";
 
 // --- START: Inlined Form Components (AddBrandForm, AddCategoryForm, AddCountryForm) ---
 // These components were previously in separate files but are inlined here to resolve import errors.
@@ -37,6 +37,7 @@ import { getCategoryRequest } from "@/store/Inventory/category/actions";
 const AddBrandForm = ({ isOpen, onClose, onSave }) => {
   const [brandName, setBrandName] = useState('');
   const [error, setError] = useState('');
+
 
   const handleSave = () => {
     if (brandName.trim() === '') {
@@ -243,6 +244,7 @@ const AddItemForm = ({ onClose }) => {
   const [productType, setProductType] = useState("");
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
+  const [subCategory, setSubCategory] = useState("");
   const [description, setDescription] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [variants, setVariants] = useState([{id:null, option: "", values: [""] }]);
@@ -293,9 +295,23 @@ const AddItemForm = ({ onClose }) => {
     dispatch(getCategoryRequest());
   }, [dispatch]);
 
+  useEffect(() => {
+    dispatch(getBrandRequest());
+  }, [dispatch]);
+
+
+  useEffect(() => {
+    setProductSku(generateProductSKU());
+  }, []);
 
   const generateSku = (attributes: Record<string, string>): string => {
     return Object.values(attributes).join('-').toUpperCase();
+  };
+
+  const generateProductSKU = () => {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+    return `PROD-${date}-${rand}`;
   };
 
   const buildCreateProductVariantRequest = (
@@ -370,18 +386,9 @@ const AddItemForm = ({ onClose }) => {
     setVariants(variants.filter((_, i) => i !== index));
   };
 
-   const [brands, setBrands] = useState([
-    { name: "Apple", value: "apple" },
-    { name: "Samsung", value: "samsung" },
-    { name: "OnePlus", value: "oneplus" }
-  ]);
-  // const [categories, setCategories] = useState([
-  //   { name: "Electronics1", value: "electronics" },
-  //   { name: "Accessories", value: "accessories" },
-  //   { name: "Clothing", value: "clothing" }
-  // ]);
-  const { categories, loading } = useSelector((state: any) => state.category || { categories: [], loading: false });
+  const { categories, brands, loading } = useSelector((state: any) => state.category || { categories: [], brands: [], loading: false });
   const [categoriesValues, setcategoriesValues] = useState(categories);
+  const [brandValues, setBrandValues] = useState(brands);
   const [countries, setCountries] = useState([
     { name: "India", value: "india" },
     { name: "China", value: "china" },
@@ -404,7 +411,7 @@ const AddItemForm = ({ onClose }) => {
 
   const handleAddBrand = (brand: { name: string; description: string }) => {
     const newBrand = { name: brand.name, value: brand.name.toLowerCase().replace(/\s+/g, '_') };
-    setBrands([...brands, newBrand]);
+    setBrandValues([...brands, newBrand]);
   };
 
   const handleAddCategory = (category: { name: string; description: string; parentCategory: string }) => {
@@ -441,6 +448,8 @@ const AddItemForm = ({ onClose }) => {
             brands={brands}
             setShowAddBrand={setShowAddBrand}
             categories={categories}
+            subCategory={subCategory}
+            setSubCategory={setSubCategory}
             setShowAddCategory={setShowAddCategory}
           />
         );
@@ -709,8 +718,9 @@ const AddItemForm = ({ onClose }) => {
           productName,
           productSku,
           productType,
-          brand,
-          category,
+          brandId: brand,
+          categoryId: category,
+          subCategoryId: subCategory,
           description,
           shortDescription,
         };

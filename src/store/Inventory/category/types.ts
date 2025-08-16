@@ -15,7 +15,13 @@ export interface CategoryDto {
 
 export interface CategoryState {
   categories: CategoryDto[];
+  brands: BrandDto[];
   loading: boolean;
   error: string | null;
   stageCompleted: boolean;
+}
+
+export interface BrandDto {
+  id: number;
+  brandName: string;
 }
